@@ -1,0 +1,29 @@
+.elementor-7360 .elementor-element.elementor-element-3ed8c7c > .elementor-widget-wrap > .elementor-widget:not(.elementor-widget__width-auto):not(.elementor-widget__width-initial):not(:last-child):not(.elementor-absolute){margin-bottom:5px;}.elementor-7360 .elementor-element.elementor-element-0893320 .elementor-icon-list-icon{width:14px;}.elementor-7360 .elementor-element.elementor-element-0893320 .elementor-icon-list-icon i{font-size:14px;}.elementor-7360 .elementor-element.elementor-element-0893320 .elementor-icon-list-icon svg{--e-icon-list-icon-size:14px;}.elementor-7360 .elementor-element.elementor-element-0893320 .elementor-icon-list-text, .elementor-7360 .elementor-element.elementor-element-0893320 .elementor-icon-list-text a{color:var( --e-global-color-text );}.elementor-7360 .elementor-element.elementor-element-84a1d65 .elementor-heading-title{color:var( --e-global-color-text );font-family:"Myriad Pro Condensed", Sans-serif;font-size:28px;font-weight:600;}.elementor-widget .tippy-tooltip .tippy-content{text-align:center;}/* Start Custom Fonts CSS */@font-face {
+	font-family: 'Myriad Pro Condensed';
+	font-style: normal;
+	font-weight: bold;
+	font-display: auto;
+	src: url('https://tarafe.com/wp-content/uploads/2022/07/MYRIADPRO-BOLDCOND.woff2') format('woff2');
+}
+@font-face {
+	font-family: 'Myriad Pro Condensed';
+	font-style: italic;
+	font-weight: bold;
+	font-display: auto;
+	src: url('https://tarafe.com/wp-content/uploads/2022/07/MYRIADPRO-BOLDCONDIT.woff2') format('woff2');
+}
+@font-face {
+	font-family: 'Myriad Pro Condensed';
+	font-style: normal;
+	font-weight: normal;
+	font-display: auto;
+	src: url('https://tarafe.com/wp-content/uploads/2022/07/MYRIADPRO-COND.woff2') format('woff2');
+}
+@font-face {
+	font-family: 'Myriad Pro Condensed';
+	font-style: italic;
+	font-weight: normal;
+	font-display: auto;
+	src: url('https://tarafe.com/wp-content/uploads/2022/07/MYRIADPRO-CONDIT.woff2') format('woff2');
+}
+/* End Custom Fonts CSS */
