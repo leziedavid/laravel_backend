@@ -112,11 +112,11 @@ Route::group(['prefix' => 'api/v1/'], function () {
     Route::post('getsouscategories', [HomeController::class, 'getsouscategories']);
     Route::post('getSousSousCategories', [HomeController::class, 'getSousSousCategories']);
     Route::get('getAllordersKanblan/{id}', [HomeController::class, 'getAllordersKanblan']);
-    Route::get('getAllorders/{id}', [HomeController::class, 'getAllorders']);
+    Route::get('getAllorders', [HomeController::class, 'getAllorders']);
     Route::get('getListeLivreurs', [HomeController::class, 'getListeLivreurs']);
     Route::get('searchCommandes/{id}', [HomeController::class, 'searchCommandes']);
     Route::get('getAllordersByUsers/{id}', [HomeController::class, 'getAllordersByUsers']);
-    Route::get('getdetailCommandes/{id}/{users}', [HomeController::class, 'getdetailCommandes']);
+    Route::get('getdetailCommandes/{id}', [HomeController::class, 'getdetailCommandes']);
     Route::get('getOrdersDetail/{id}/{users}', [HomeController::class, 'getOrdersDetail']);
 
     // Vérification de la boutique
@@ -198,7 +198,7 @@ Route::group(['prefix' => 'api/v1/'], function () {
     // Route pour obtenir toutes les images de la galerie
     Route::get('gallerie-images', [HomeController::class, 'getAllGallerieImages']);
     // Route pour sauvegarder les images de la galerie
-    Route::post('gallerie-images', [HomeController::class, 'saveGallerieImages']);
+    Route::post('savegallerie-images', [HomeController::class, 'saveGallerieImages']);
     // Route pour enregistrer les réalisations
     Route::post('realisations', [HomeController::class, 'saveRealisations']);
     // Route pour mettre à jour les réalisations

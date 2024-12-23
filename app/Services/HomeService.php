@@ -414,7 +414,6 @@ class HomeService
 
         $response = "[" . $outp . "]";
         return $this->apiResponse(200, "Produits triés par  catégorie", $response, 200);
-
     }
 
     // Fonction pour l'index de la page d'accueil
@@ -534,7 +533,6 @@ class HomeService
         ];
 
         return $this->apiResponse(200, "liste des Proprietes", $response, 200);
-
     }
 
     public function getDeatailSop($id)
@@ -605,8 +603,6 @@ class HomeService
         ];
 
         return $this->apiResponse(200, "Consultation des données", $response, 200);
-
-
     }
 
     public function searchRange($valeur)
@@ -619,9 +615,8 @@ class HomeService
             ->distinct()
             ->get();
 
-        $response= $products;
+        $response = $products;
         return $this->apiResponse(200, "Consultation des données", $response, 200);
-
     }
 
     public function searchRangeByItem($valeur, $item)
@@ -636,7 +631,6 @@ class HomeService
             ->get();
 
         return $this->apiResponse(200, "Consultation des données", $response, 200);
-
     }
 
     public function searchProduct($valeur)
@@ -674,7 +668,6 @@ class HomeService
             ->distinct()
             ->get();
         return $this->apiResponse(200, "Consultation des données", $products, 200);
-
     }
 
     public function searchProductByItem($valeur, $item)
@@ -707,7 +700,7 @@ class HomeService
     public function verifBoutique($valeur)
     {
         $stores = DB::table('stores')
-        ->where('stores.nom_stores', 'like', '%' . $valeur . '%')
+            ->where('stores.nom_stores', 'like', '%' . $valeur . '%')
             ->orderBy('stores.id_stores', 'desc')
             ->distinct()
             ->get();
@@ -727,7 +720,7 @@ class HomeService
     public function verifEmail($valeur)
     {
         $stores = DB::table('users')
-        ->where('users.email', 'like', '%' . $valeur . '%')
+            ->where('users.email', 'like', '%' . $valeur . '%')
             ->orderBy('users.id', 'desc')
             ->distinct()
             ->get();
@@ -768,9 +761,9 @@ class HomeService
     public function getAllwishlistByUsers($id)
     {
         $DataWishlist = DB::table('wishlist')
-        ->join('products', 'products.id_products', '=', 'wishlist.idProduits_wishlist')
-        ->join('stores', 'stores.id_stores', '=', 'wishlist.storesId_wishlist')
-        ->where('wishlist.idusers_wishlist', $id)
+            ->join('products', 'products.id_products', '=', 'wishlist.idProduits_wishlist')
+            ->join('stores', 'stores.id_stores', '=', 'wishlist.storesId_wishlist')
+            ->where('wishlist.idusers_wishlist', $id)
             ->orderBy('wishlist.wishlist_id', 'desc')
             ->distinct()
             ->get();
@@ -786,7 +779,7 @@ class HomeService
             $tabdata = explode(",", $data);
 
             $subCategories = DB::table('sous_categories_produits')
-            ->whereIn('sous_categories_produits.idcategories_produits', $tabdata)
+                ->whereIn('sous_categories_produits.idcategories_produits', $tabdata)
                 ->where('sous_categories_produits.state_sous_categories_produits', '=', 1)
                 ->orderBy('sous_categories_produits.libelle_sous_categories_produits', 'ASC')
                 ->distinct()
@@ -808,8 +801,8 @@ class HomeService
             $tabdata = explode(",", $data);
 
             $subCategories = DB::table('sous_sous_categories_produits')
-            ->join('sous_categories_produits', 'sous_categories_produits.id_sous_categories_produits', '=', 'sous_sous_categories_produits.idsous_categories_produits')
-            ->whereIn('sous_sous_categories_produits.idsous_categories_produits', $tabdata)
+                ->join('sous_categories_produits', 'sous_categories_produits.id_sous_categories_produits', '=', 'sous_sous_categories_produits.idsous_categories_produits')
+                ->whereIn('sous_sous_categories_produits.idsous_categories_produits', $tabdata)
                 ->where('sous_sous_categories_produits.state_sous_sous_categories_produits', '=', 1)
                 ->orderBy('sous_sous_categories_produits.libelle_sous_sous_categories', 'ASC')
                 ->distinct()
@@ -824,30 +817,39 @@ class HomeService
     }
 
     public function getAllordersKanblan($id)
-    {-
-        $orders = DB::table('orders')
-        ->orderBy('orders.id_orders', 'desc')
-        ->distinct()
+    {
+        -$orders = DB::table('orders')
+            ->orderBy('orders.id_orders', 'desc')
+            ->distinct()
             ->get();
 
         return $this->apiResponse(200, "Consultation des commandes", $orders, 200);
     }
 
-    public function getAllorders($id)
+    public function getAllorders($filters)
     {
-        $orders = DB::table('orders')
-        ->orderBy('orders.id_orders', 'desc')
-        ->distinct()
-            ->paginate(3);
-
+        // Récupérer les paramètres de filtrage
+        $page = $filters['page'];
+        $limit = $filters['limit'];
+        $search = $filters['search'];
+        // Construire la requête de base
+        $query = DB::table('orders')->orderBy('orders.id_orders', 'desc')->distinct();
+        // Ajouter un filtre de recherche sur le champ 'transaction_id' si un terme de recherche est fourni
+        if ($search) {
+            $query->where('orders.transaction_id', 'like', '%' . $search . '%');
+        }
+        // Ajouter la pagination en utilisant la méthode paginate de Laravel
+        $orders = $query->paginate($limit, ['*'], 'page', $page);
+        // Retourner la réponse API avec les commandes paginées
         return $this->apiResponse(200, "Consultation des commandes", $orders, 200);
     }
+
 
     public function getListeLivreurs()
     {
         $roles = "Livreurs";
         $users = DB::table('users')
-        ->where('users.is_admin', '=', $roles)
+            ->where('users.is_admin', '=', $roles)
             ->orderBy('users.id', 'desc')
             ->distinct()
             ->get();
@@ -858,7 +860,7 @@ class HomeService
     public function searchCommandes($id)
     {
         $orders = DB::table('orders')
-        ->where('orders.transaction_id', 'like', '%' . $id . '%')
+            ->where('orders.transaction_id', 'like', '%' . $id . '%')
             ->orderBy('orders.id_orders', 'desc')
             ->distinct()
             ->paginate(3);
@@ -869,58 +871,58 @@ class HomeService
     public function getAllordersByUsers($id)
     {
         $orders = DB::table('orders')
-        ->join('users', 'users.id', '=', 'orders.user_id')
-        ->where('users.id', '=', $id)
+            ->join('users', 'users.id', '=', 'orders.user_id')
+            ->where('users.id', '=', $id)
             ->orderBy('orders.id_orders', 'desc')
             ->distinct()
             ->get();
 
         $sommes = DB::table('orders')
-        ->join('users', 'users.id', '=', 'orders.user_id')
-        ->where('users.id', '=', $id)
+            ->join('users', 'users.id', '=', 'orders.user_id')
+            ->where('users.id', '=', $id)
             ->where('orders.status_orders', '=', 5)
             ->select(DB::raw('SUM(total) as total_pays'))
             ->get();
 
         $Users = DB::table('users')
-        ->where('users.id', '=', $id)
+            ->where('users.id', '=', $id)
             ->distinct()
             ->get();
 
         return $this->apiResponse(200, "Commande par utilisateur", ['data' => $orders, 'users' => $Users, 'sommes' => $sommes], 200);
     }
 
-    public function getdetailCommandes($id, $users)
+    public function getdetailCommandes($id)
     {
-        $orders = DB::table('orders')
-        ->join('achats', 'achats.orderId', '=', 'orders.id_orders')
-        ->join('realisations', 'realisations.code_realisation', '=', 'achats.codeAchat')
-        ->where('orders.id_orders', '=', $id)
+        $ordersData = DB::table('orders')
+            ->join('achats', 'achats.orderId', '=', 'orders.id_orders')
+            ->join('realisations', 'realisations.code_realisation', '=', 'achats.codeAchat')
+            ->where('orders.id_orders', '=', $id)
             ->orderBy('achats.id_achats', 'desc')
             ->distinct()
             ->get();
 
-        $ordersData = DB::table('orders')
-        ->where('orders.id_orders', '=', $id)
-            ->orderBy('orders.id_orders', 'desc')
-            ->distinct()
-            ->get();
+        // $ordersData = DB::table('orders')
+        // ->where('orders.id_orders', '=', $id)
+        //     ->orderBy('orders.id_orders', 'desc')
+        //     ->distinct()
+        //     ->get();
 
-        return $this->apiResponse(200, "Détail des commandes", ['data' => $orders, 'ordersData' => $ordersData], 200);
+        return $this->apiResponse(200, "Détail des commandes", $ordersData, 200);
     }
 
     public function getOrdersDetail($id, $users)
     {
         $orders = DB::table('orders')
-        ->join('order_product', 'order_product.order_id', '=', 'orders.id_orders')
-        ->join('products', 'products.id_products', '=', 'order_product.product_id')
-        ->where('orders.id_orders', '=', $id)
+            ->join('order_product', 'order_product.order_id', '=', 'orders.id_orders')
+            ->join('products', 'products.id_products', '=', 'order_product.product_id')
+            ->where('orders.id_orders', '=', $id)
             ->orderBy('order_product.order_id', 'desc')
             ->distinct()
             ->get();
 
         $ordersData = DB::table('orders')
-        ->where('orders.id_orders', '=', $id)
+            ->where('orders.id_orders', '=', $id)
             ->orderBy('orders.id_orders', 'desc')
             ->distinct()
             ->get();
@@ -966,7 +968,7 @@ class HomeService
     public function changestatPartenaires($id, $staus)
     {
         $donnes = DB::table('partenaires')
-        ->where('id_partenaires', '=', $id)
+            ->where('id_partenaires', '=', $id)
             ->update([
                 'status_partenaires' => $staus,
             ]);
@@ -977,17 +979,17 @@ class HomeService
     public function getPartenaires($id)
     {
         $datas = DB::table('partenaires')
-        ->orderBy('partenaires.id_partenaires', 'desc')
-        ->paginate(4);
+            ->orderBy('partenaires.id_partenaires', 'desc')
+            ->paginate(4);
         return $this->apiResponse(200, "Consultation des sous-sous-catégories", $datas, 200);
     }
 
     public function listespartenaire($id)
     {
         $datas = DB::table('partenaires')
-        ->where('status_partenaires', '=', 1)
-        ->orderBy('partenaires.id_partenaires', 'desc')
-        ->get();
+            ->where('status_partenaires', '=', 1)
+            ->orderBy('partenaires.id_partenaires', 'desc')
+            ->get();
 
         $response = [
             'datas' => $datas,
@@ -1107,7 +1109,7 @@ class HomeService
         $relativePath = $dir . $filename;
 
         DB::table('achats')
-        ->where('orderId', '=', $request->orderId)
+            ->where('orderId', '=', $request->orderId)
             ->update(['devisFiles' => $relativePath]);
 
         $response = [
@@ -1134,14 +1136,14 @@ class HomeService
 
         if ($request->options == 0) {
             DB::table('achats')
-            ->where('orderId', '=', $request->orderId)
+                ->where('orderId', '=', $request->orderId)
                 ->update([
                     'modelfiles' => $relativePath,
                     'state' => 4
                 ]);
         } else {
             DB::table('achats')
-            ->where('orderId', '=', $request->orderId)
+                ->where('orderId', '=', $request->orderId)
                 ->update([
                     'facturesFiles' => $relativePath,
                     'state' => 4
@@ -1191,7 +1193,7 @@ class HomeService
             $dataPanie = json_decode($request->cart);
             foreach ($dataPanie as $data) {
                 DB::table('orders')
-                ->where('id_orders', '=', $Order)
+                    ->where('id_orders', '=', $Order)
                     ->update([
                         'couleur_orders' => $data->colors,
                         'taille_orders' => $data->taille,
@@ -1207,14 +1209,14 @@ class HomeService
                 ]);
 
                 $dataProd = DB::table('products')
-                ->where('products.id_products', '=', $data->id_products)
+                    ->where('products.id_products', '=', $data->id_products)
                     ->get();
 
                 $theprod = json_decode($dataProd);
                 $newstoks = $theprod[0]->stoks == 0 ? 0 : $theprod[0]->stoks - $data->quantity;
 
                 DB::table('products')
-                ->where('products.id_products', '=', $data->id_products)
+                    ->where('products.id_products', '=', $data->id_products)
                     ->update([
                         'stoks' => $newstoks,
                     ]);
@@ -1234,7 +1236,7 @@ class HomeService
             }
 
             $personnalise = DB::table('personalization')
-            ->where('personalization.id_commandes_personalization', '=', $Order)
+                ->where('personalization.id_commandes_personalization', '=', $Order)
                 ->get();
 
             if (count($personnalise) > 0) {
@@ -1242,7 +1244,7 @@ class HomeService
                 $donnes = 1;
 
                 DB::table('orders')
-                ->where('orders.id_orders', '=', $retour[0]->id_commandes_personalization)
+                    ->where('orders.id_orders', '=', $retour[0]->id_commandes_personalization)
                     ->update([
                         'personnalise' => $donnes,
                     ]);
@@ -1276,14 +1278,14 @@ class HomeService
         $codes = json_decode($donnes)[0]->code_realisation ?? '';
         $images = DB::table('img_realisations')->where('codeId', '=', $codes)->get();
         $reglages = DB::table('reglages')->distinct()->orderBy('reglages.id_reglages', 'desc')->get();
-        return $this->apiResponse(200, "Consultation des réalisations par libellé", ['images' => $images, 'id' => $codes, 'realisations' => $donnes,'reglages' => $reglages], 200);
+        return $this->apiResponse(200, "Consultation des réalisations par libellé", ['images' => $images, 'id' => $codes, 'realisations' => $donnes, 'reglages' => $reglages], 200);
     }
 
     // Récupérer les réalisations par ID
     public function getRealisationbyId($id)
     {
         $donnes = DB::table('realisations')->where('code_realisation', '=', $id)->get();
-        $images = DB::table('img_realisations')->where('codeId', '=', $id) ->get();
+        $images = DB::table('img_realisations')->where('codeId', '=', $id)->get();
         return $this->apiResponse(200, "Consultation des réalisations par ID", [
             'images' => $images,
             'data' => $donnes,
@@ -1337,28 +1339,24 @@ class HomeService
     public function getAllRealisationsBystatus($request)
     {
 
-        // $realisations=[];
-        // dd($category);
 
         if ($request == 0) {
 
             $realisations = DB::table('realisations')
-            ->where('statut_realisations', '=', 1)
-            ->orderBy('realisations.id_realisations', 'desc')
-            ->distinct()
-            ->paginate(30);
-        
-        }else{
+                ->where('statut_realisations', '=', 1)
+                ->orderBy('realisations.id_realisations', 'desc')
+                ->distinct()
+                ->paginate(30);
+        } else {
 
             $realisations = DB::table('realisations')
-            ->join('op_realisation', 'op_realisation.idrealis_op_realisation', '=', 'realisations.id_realisations')
-            ->join('option_reaalisation', 'option_reaalisation.id_option_reaalisation', '=', 'op_realisation.idoption_realis_op_realisation')
-            ->where('op_realisation.idoption_realis_op_realisation', '=', $request)
-            ->where('realisations.statut_realisations', '=', 1)
-            ->orderBy('realisations.id_realisations', 'desc')
-            ->distinct()
-            ->paginate(30);
-
+                ->join('op_realisation', 'op_realisation.idrealis_op_realisation', '=', 'realisations.id_realisations')
+                ->join('option_reaalisation', 'option_reaalisation.id_option_reaalisation', '=', 'op_realisation.idoption_realis_op_realisation')
+                ->where('op_realisation.idoption_realis_op_realisation', '=', $request)
+                ->where('realisations.statut_realisations', '=', 1)
+                ->orderBy('realisations.id_realisations', 'desc')
+                ->distinct()
+                ->paginate(30);
         }
 
         // dd($realisations);
@@ -1450,7 +1448,7 @@ class HomeService
     public function SaveDataTitle(Request $request)
     {
         DB::table('reglages')
-        ->where('id_reglages', '=', $request->id_reglages)
+            ->where('id_reglages', '=', $request->id_reglages)
             ->update([
                 'texteHeader1' => $request->texteHeader1,
                 'texteHeader2' => $request->texteHeader2,
@@ -1473,7 +1471,7 @@ class HomeService
         $today = date("Y-m-d");
         if ($request->id_politique) {
             $politique = DB::table('politique')
-            ->where('politique.id_politique', $request->id_politique)
+                ->where('politique.id_politique', $request->id_politique)
                 ->update([
                     'libelle_politique' => $request->libelle_politique,
                     'description_politique' => $request->description_politique,
@@ -1502,12 +1500,14 @@ class HomeService
 
     public function getreglages()
     {
-        $reglages = DB::table('reglages')
-            ->distinct()
-            ->orderBy('reglages.id_reglages', 'desc')
-            ->get();
+        $reglages = DB::table('reglages')->distinct()->orderBy('reglages.id_reglages', 'desc')->get();
+        $getEquipes = DB::table('equipes')->distinct()->orderBy('equipes.id_equipe', 'desc')->get();
+        $response = [
+            'reglages' => $reglages,
+            'equipes' => $getEquipes,
+        ];
 
-        return $this->apiResponse(200, "Réglages récupérés avec succès", $reglages, 200);
+        return $this->apiResponse(200, "Réglages récupérés avec succès", $response, 200);
     }
 
 
@@ -1532,20 +1532,28 @@ class HomeService
     }
 
 
-    public function getAllRealisations()
+    public function getAllRealisations($filters)
     {
-        $realisations = DB::table('realisations')
-        ->distinct()
-            ->orderBy('realisations.id_realisations', 'desc')
-            ->paginate(20);
-
+        // Récupérer les paramètres de filtrage
+        $page = $filters['page'];
+        $limit = $filters['limit'];
+        $search = $filters['search'];
+        // Construire la requête de base
+        $query = DB::table('realisations')->orderBy('realisations.id_realisations', 'desc')->distinct();
+        if ($search) {
+            $query->where('realisations.libelle_realisations', 'like', '%' . $search . '%');
+        }
+        // Ajouter la pagination en utilisant la méthode paginate de Laravel
+        $realisations = $query->paginate($limit, ['*'], 'page', $page);
+        // Retourner la réponse API avec les realisations paginées
+        // $realisations = DB::table('realisations')->distinct()->orderBy('realisations.id_realisations', 'desc')->paginate(20);
         return $this->apiResponse(200, "Réalisations récupérées avec succès", $realisations, 200);
     }
 
     public function getAllSubscribers()
     {
         $Subscribers = DB::table('newsletter')
-        ->distinct()
+            ->distinct()
             ->paginate(4);
 
         return $this->apiResponse(200, "Abonnés récupérés avec succès",  $Subscribers, 200);
@@ -1555,7 +1563,7 @@ class HomeService
     public function getAllimgRealisations($id)
     {
         $images = DB::table('img_realisations')
-        ->where('img_realisations.realisations_id', '=', $id)
+            ->where('img_realisations.realisations_id', '=', $id)
             ->get();
 
         return $this->apiResponse(200, "Images récupérées avec succès", $images, 200);
@@ -1565,11 +1573,11 @@ class HomeService
     public function removeImagesRealisation($id_img_realisations, $realisations_id)
     {
         DB::table('img_realisations')
-        ->where('img_realisations.id_img_realisations', '=', $id_img_realisations)
+            ->where('img_realisations.id_img_realisations', '=', $id_img_realisations)
             ->delete();
 
         $remainingImages = DB::table('img_realisations')
-        ->where('realisations_id', '=', $realisations_id)
+            ->where('realisations_id', '=', $realisations_id)
             ->get();
 
         return $this->apiResponse(200, "Image supprimée avec succès", $remainingImages, 200);
@@ -1579,7 +1587,7 @@ class HomeService
     public function removeRealisation($id)
     {
         DB::table('realisations')
-        ->where('id_realisations', '=', $id)
+            ->where('id_realisations', '=', $id)
             ->delete();
 
         return $this->apiResponse(200, "Réalisations supprimées avec succès", [], 200);
@@ -1587,46 +1595,60 @@ class HomeService
 
 
     public function SaveAllImages(Request $request)
-{
-    $today = date("Y-m-d");
-    $relativePaths = "";
-    $status = 0;
-    $extension = "";
-
-    foreach ($request->file('files') as $fichiers) :
-        $dir = 'Realisations/';
-        $str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        $str1 = '0123456789';
-        $shuffled = str_shuffle($str);
-        $shuffled1 = str_shuffle($str1);
-        $code = "Tarafes-" . substr($shuffled1, 0, 5) . "" . substr($shuffled, 0, 1);
-        $absolutePath = public_path($dir);
-        $extension = $fichiers->getClientOriginalExtension();
-        $filename = $code . '.' . $extension;
-        $fichiers->move($absolutePath, $filename);
-        $relativePaths = $dir . $filename;
-        $photo = $relativePaths;
-
-        DB::table('img_realisations')->insert([
-            'realisations_id' => $request->id_realisation,
-            'filles_img_realisations' => $relativePaths,
-            'one_img_realisations' => $request->one_img_realisations,
-            'codeId' => $request->code_realisation,
-            'created_at' => $today,
-        ]);
-    endforeach;
-
-    return $this->apiResponse(200, "Document ajouté avec succès", ['files' => $relativePaths], 200);
-}
-
-    public function getAllgallerieImages()
     {
+        $today = date("Y-m-d");
+        $relativePaths = "";
+        $status = 0;
+        $extension = "";
+
+        foreach ($request->file('files') as $fichiers) :
+            $dir = 'Realisations/';
+            $str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            $str1 = '0123456789';
+            $shuffled = str_shuffle($str);
+            $shuffled1 = str_shuffle($str1);
+            $code = "Tarafes-" . substr($shuffled1, 0, 5) . "" . substr($shuffled, 0, 1);
+            $absolutePath = public_path($dir);
+            $extension = $fichiers->getClientOriginalExtension();
+            $filename = $code . '.' . $extension;
+            $fichiers->move($absolutePath, $filename);
+            $relativePaths = $dir . $filename;
+            $photo = $relativePaths;
+
+            DB::table('img_realisations')->insert([
+                'realisations_id' => $request->id_realisation,
+                'filles_img_realisations' => $relativePaths,
+                'one_img_realisations' => $request->one_img_realisations,
+                'codeId' => $request->code_realisation,
+                'created_at' => $today,
+            ]);
+        endforeach;
+
+        return $this->apiResponse(200, "Document ajouté avec succès", ['files' => $relativePaths], 200);
+    }
+
+    public function getAllgallerieImages($filters)
+    {
+           // Récupérer les paramètres de filtrage
+           $page = $filters['page'];
+           $limit = $filters['limit'];
+           $search = $filters['search'];
+
         $images = DB::table('gallerie_images')
-        ->distinct()
+            ->distinct()
             ->orderBy('gallerie_images.id_gallerie_images', 'desc')
             ->paginate(50);
 
-        return $this->apiResponse(200, "Images récupérées avec succès", $images, 200);
+        $reglages = DB::table('reglages')
+            ->distinct()->orderBy('reglages.id_reglages', 'desc')
+            ->get();
+
+        $response = [
+            'data' => $images,
+            'reglages' => $reglages,
+        ];
+
+        return $this->apiResponse(200, "Images récupérées avec succès", $response, 200);
     }
 
     public function SavegallerieImages(Request $request)
@@ -1711,7 +1733,7 @@ class HomeService
             }
         }
 
-        return $this->apiResponse(200, "Réalisations ajoutées avec succès", [ 'realisationsId' => $realisationsId, 'tabselected' => $tabselected ?? [],], 200);
+        return $this->apiResponse(200, "Réalisations ajoutées avec succès", ['realisationsId' => $realisationsId, 'tabselected' => $tabselected ?? [],], 200);
     }
 
     public function updateRealisations(Request $request)
@@ -1737,7 +1759,7 @@ class HomeService
             $relativePath = $dir . $filename;
 
             $realisationsId = DB::table('realisations')
-            ->where('id_realisations', $request->id_realisations)
+                ->where('id_realisations', $request->id_realisations)
                 ->update([
                     'libelle_realisations' => $request->libelle,
                     'descript_real' => $request->description,
@@ -1746,7 +1768,7 @@ class HomeService
                 ]);
         } else if ($request->states == 0) {
             $realisationsId = DB::table('realisations')
-            ->where('id_realisations', $request->id_realisations)
+                ->where('id_realisations', $request->id_realisations)
                 ->update([
                     'libelle_realisations' => $request->libelle,
                     'descript_real' => $request->description,
@@ -1754,7 +1776,7 @@ class HomeService
                 ]);
         }
 
-        return $this->apiResponse(200, "Réalisations mises à jour avec succès",$realisationsId, 200);
+        return $this->apiResponse(200, "Réalisations mises à jour avec succès", $realisationsId, 200);
     }
 
     public function addMessages($request)
@@ -1855,7 +1877,7 @@ class HomeService
         ]);
 
         $message = $newsletterId ? "Inscription à la newsletter réussie" : "Échec de l'inscription à la newsletter";
-        return $this->apiResponse(200, $message,$newsletterId, 200);
+        return $this->apiResponse(200, $message, $newsletterId, 200);
     }
 
     public function getAllnewsletters()
@@ -1865,72 +1887,64 @@ class HomeService
     }
 
     public function employees()
-{
-    $employees = DB::table('employees')->get();
-    
-    return $this->apiResponse(200, "Liste des employés récupérée avec succès", $employees, 200);
-}
+    {
+        $employees = DB::table('employees')->get();
 
-public function getAllCommenteById($id)
-{
-    $blogs = DB::table('blog_comment')
-        ->where('status_blog_comment', '=', 1)
-        ->where('posteId_comment', '=', $id)
-        ->get();
-
-    return $this->apiResponse(200, "Commentaires du blog récupérés avec succès", $blogs, 200);
-}
-
-public function getStoreById($id)
-{
-    $stores = DB::table('stores')
-        ->join('users', 'users.id', '=', 'stores.idUsers_stores')
-        ->where('stores.status_stores', '=', 1)
-        ->where('stores.id_stores', '=', $id)
-        ->get();
-
-    return $this->apiResponse(200, "Magasins récupérés avec succès", $stores, 200);
-}
-
-public function addproduitscomments(Request $request)
-{
-    $status = "1";
-    $messages = "";
-    $today = date("Y-m-d");
-
-    $commentId = DB::table('produit_comment')->insertGetId([
-        'nom_produit_comment' => $request->nomPrenom,
-        'email_produit_comment' => $request->email,
-        'texte_produit_comment' => $request->contents,
-        'status_produit_comment' => $status,
-        'produitCode_comment' => $request->posteId,
-        'created_at' => $today,
-    ]);
-
-    if ($commentId) {
-        $messages = "Commentaire ajouté avec succès";
-    } else {
-        $messages = "Erreur lors de l'ajout du commentaire";
+        return $this->apiResponse(200, "Liste des employés récupérée avec succès", $employees, 200);
     }
 
-    return $this->apiResponse(200, $messages, $commentId, 200);
-}
+    public function getAllCommenteById($id)
+    {
+        $blogs = DB::table('blog_comment')
+            ->where('status_blog_comment', '=', 1)
+            ->where('posteId_comment', '=', $id)
+            ->get();
 
-public function getAllproduitscommentsById($id)
-{
-    $comments = DB::table('produit_comment')
-        ->where('status_produit_comment', '=', 1)
-        ->where('produitCode_comment', '=', $id)
-        ->get();
+        return $this->apiResponse(200, "Commentaires du blog récupérés avec succès", $blogs, 200);
+    }
 
-    return $this->apiResponse(200, "Commentaires du produit récupérés avec succès", $comments, 200);
-}
+    public function getStoreById($id)
+    {
+        $stores = DB::table('stores')
+            ->join('users', 'users.id', '=', 'stores.idUsers_stores')
+            ->where('stores.status_stores', '=', 1)
+            ->where('stores.id_stores', '=', $id)
+            ->get();
 
+        return $this->apiResponse(200, "Magasins récupérés avec succès", $stores, 200);
+    }
 
+    public function addproduitscomments(Request $request)
+    {
+        $status = "1";
+        $messages = "";
+        $today = date("Y-m-d");
 
+        $commentId = DB::table('produit_comment')->insertGetId([
+            'nom_produit_comment' => $request->nomPrenom,
+            'email_produit_comment' => $request->email,
+            'texte_produit_comment' => $request->contents,
+            'status_produit_comment' => $status,
+            'produitCode_comment' => $request->posteId,
+            'created_at' => $today,
+        ]);
 
+        if ($commentId) {
+            $messages = "Commentaire ajouté avec succès";
+        } else {
+            $messages = "Erreur lors de l'ajout du commentaire";
+        }
 
+        return $this->apiResponse(200, $messages, $commentId, 200);
+    }
 
+    public function getAllproduitscommentsById($id)
+    {
+        $comments = DB::table('produit_comment')
+            ->where('status_produit_comment', '=', 1)
+            ->where('produitCode_comment', '=', $id)
+            ->get();
 
-
+        return $this->apiResponse(200, "Commentaires du produit récupérés avec succès", $comments, 200);
+    }
 }

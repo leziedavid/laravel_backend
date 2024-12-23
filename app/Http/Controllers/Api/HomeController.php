@@ -202,10 +202,17 @@ class HomeController extends Controller
         return $this->homeService->getAllordersKanblan($id);
     }
 
-    // Récupérer toutes les commandes
-    public function getAllorders($id)
+    public function getAllorders(Request $request)
     {
-        return $this->homeService->getAllorders($id);
+        // Récupérer les paramètres de la requête (page, limit, search)
+        $filters = [
+            'page' => $request->query('page', 1),   // Par défaut, la page est 1
+            'limit' => $request->query('limit', 10), // Par défaut, la limite est 10
+            'search' => $request->query('search', null), // Si 'search' est fourni, on l'utilise, sinon null
+        ];
+    
+        // Passer les filtres au service pour récupérer les données
+        return $this->homeService->getAllorders($filters);
     }
 
     // Récupérer la liste des livreurs
@@ -227,9 +234,9 @@ class HomeController extends Controller
     }
 
     // Détail des commandes par utilisateur
-    public function getdetailCommandes($id, $users)
+    public function getdetailCommandes($id)
     {
-        return $this->homeService->getdetailCommandes($id, $users);
+        return $this->homeService->getdetailCommandes($id);
     }
 
     // Détail des produits de la commande
@@ -396,9 +403,16 @@ class HomeController extends Controller
     }
 
     // Action pour obtenir toutes les réalisations
-    public function getAllRealisations()
+    public function getAllRealisations(Request $request)
     {
-        return $this->homeService->getAllRealisations();
+        // Récupérer les paramètres de la requête (page, limit, search)
+        $filters = [
+            'page' => $request->query('page', 1),   // Par défaut, la page est 1
+            'limit' => $request->query('limit', 10), // Par défaut, la limite est 10
+            'search' => $request->query('search', null), // Si 'search' est fourni, on l'utilise, sinon null
+        ];
+        // return $this->homeService->getAllorders($filters);
+        return $this->homeService->getAllRealisations($filters);
     }
 
     // Action pour obtenir tous les abonnés
@@ -427,9 +441,15 @@ class HomeController extends Controller
 
 
         // Action pour récupérer toutes les images de la galerie
-        public function getAllGallerieImages()
+        public function getAllGallerieImages(Request $request)
         {
-            return $this->homeService->getAllgallerieImages();
+            // Récupérer les paramètres de la requête (page, limit, search)
+            $filters = [
+                'page' => $request->query('page', 1),   // Par défaut, la page est 1
+                'limit' => $request->query('limit', 10), // Par défaut, la limite est 10
+                'search' => $request->query('search', null), // Si 'search' est fourni, on l'utilise, sinon null
+            ];
+            return $this->homeService->getAllgallerieImages($filters);
         }
     
         // Action pour sauvegarder les images de la galerie
