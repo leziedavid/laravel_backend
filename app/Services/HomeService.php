@@ -9,6 +9,8 @@ use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
+use function Illuminate\Log\log;
+
 class HomeService
 {
     use ApiResponse;
@@ -428,22 +430,22 @@ class HomeService
             ->get();
 
         $item = 1;
-        $products = DB::table('products')
-            ->join('categoriesByproduits', 'categoriesByproduits.produitsId', '=', 'products.id_products')
-            ->join('categories_produits', 'categories_produits.id_categories_produits', '=', 'categoriesByproduits.categoriesId')
-            ->where('products.status_products', $item)
-            ->orderBy('products.id_products', 'DESC')
-            ->distinct()
-            ->get();
+        // $products = DB::table('products')
+        //     ->join('categoriesByproduits', 'categoriesByproduits.produitsId', '=', 'products.id_products')
+        //     ->join('categories_produits', 'categories_produits.id_categories_produits', '=', 'categoriesByproduits.categoriesId')
+        //     ->where('products.status_products', $item)
+        //     ->orderBy('products.id_products', 'DESC')
+        //     ->distinct()
+        //     ->get();
 
-        $productsHomes = DB::table('products')
-            ->join('categoriesByproduits', 'categoriesByproduits.produitsId', '=', 'products.id_products')
-            ->join('categories_produits', 'categories_produits.id_categories_produits', '=', 'categoriesByproduits.categoriesId')
-            ->where('products.status_products', $item)
-            ->orderBy('products.id_products', 'DESC')
-            ->distinct()
-            ->limit(8)
-            ->get();
+        // $productsHomes = DB::table('products')
+        //     ->join('categoriesByproduits', 'categoriesByproduits.produitsId', '=', 'products.id_products')
+        //     ->join('categories_produits', 'categories_produits.id_categories_produits', '=', 'categoriesByproduits.categoriesId')
+        //     ->where('products.status_products', $item)
+        //     ->orderBy('products.id_products', 'DESC')
+        //     ->distinct()
+        //     ->limit(8)
+        //     ->get();
 
         $blogs = DB::table('posts')
             ->join('users', 'users.id', '=', 'posts.posts_user_id')
@@ -483,8 +485,8 @@ class HomeService
         $response = [
             'categories' => $categories,
             'sliders' => $sliders,
-            'products' => $products,
-            'productsHomes' => $productsHomes,
+            // 'products' => $products,
+            // 'productsHomes' => $productsHomes,
             'blogs' => $blogs,
             'partenaires' => $partenaires,
             'realisations' => $realisations,
@@ -901,13 +903,6 @@ class HomeService
             ->orderBy('achats.id_achats', 'desc')
             ->distinct()
             ->get();
-
-        // $ordersData = DB::table('orders')
-        // ->where('orders.id_orders', '=', $id)
-        //     ->orderBy('orders.id_orders', 'desc')
-        //     ->distinct()
-        //     ->get();
-
         return $this->apiResponse(200, "Détail des commandes", $ordersData, 200);
     }
 
@@ -999,6 +994,9 @@ class HomeService
 
     public function Addachats(Request $request)
     {
+
+        $uploadedFiles = $request->imgLogosAchats;
+
         $str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
         $str1 = '0123456789';
         $shuffled = str_shuffle($str);
@@ -1021,6 +1019,19 @@ class HomeService
         ]);
 
         if ($Order) {
+
+            $dir = 'ImgesPerson/';
+            $str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            $str1 = '0123456789';
+            $shuffled = str_shuffle($str);
+            $shuffled1 = str_shuffle($str1);
+            $code = "Com-" . substr($shuffled1, 0, 5) . "" . substr($shuffled, 0, 1);
+            $absolutePath = public_path($dir);
+            $extension = $uploadedFiles->getClientOriginalExtension();
+            $filename = $code . '.' . $extension;
+            $uploadedFiles->move($absolutePath, $filename);
+            $relativePath = $dir . $filename;
+
             DB::table('achats')->insertGetId([
                 'codeAchat' => $request->codeAchat,
                 'orderId' =>  $Order,
@@ -1033,7 +1044,7 @@ class HomeService
                 'EntrepriseAchats' => $request->EntrepriseAchats,
                 'emailAchats' => $request->emailAchats,
                 'FileAchats' => $request->FileAchats,
-                'imgLogosAchats' => $request->imgLogosAchats,
+                'imgLogosAchats' => $relativePath,
                 'policeAchats' => $request->policeAchats,
                 'PositionsFiles' => $request->PositionsFiles,
                 'texteAchats' => $request->texteAchats,
@@ -1059,7 +1070,7 @@ class HomeService
                 'Users' => $Users,
                 'emailAdmin' => $emailAdmin,
             ];
-            Mail::to($emailAdmin)->send(new Notifications($maildata));
+            // Mail::to($emailAdmin)->send(new Notifications($maildata));
 
             $states = true;
             $response = [
@@ -1545,8 +1556,6 @@ class HomeService
         }
         // Ajouter la pagination en utilisant la méthode paginate de Laravel
         $realisations = $query->paginate($limit, ['*'], 'page', $page);
-        // Retourner la réponse API avec les realisations paginées
-        // $realisations = DB::table('realisations')->distinct()->orderBy('realisations.id_realisations', 'desc')->paginate(20);
         return $this->apiResponse(200, "Réalisations récupérées avec succès", $realisations, 200);
     }
 
@@ -1565,7 +1574,6 @@ class HomeService
         $images = DB::table('img_realisations')
             ->where('img_realisations.realisations_id', '=', $id)
             ->get();
-
         return $this->apiResponse(200, "Images récupérées avec succès", $images, 200);
     }
 
@@ -1594,7 +1602,67 @@ class HomeService
     }
 
 
+
     public function SaveAllImages(Request $request)
+    {
+        try {
+            if (!$request->hasFile('files')) {
+                return $this->apiResponse(400, "Aucun fichier n'a été envoyé.", [], 400);
+            }
+    
+            $today = date("Y-m-d");
+            $relativePaths = [];
+            $files = $request->file('files');
+    
+            // Si un seul fichier est envoyé, le convertir en tableau
+            if (!is_array($files)) {
+                $files = [$files];
+            }
+    
+            foreach ($files as $fichiers) {
+                if (!$fichiers || !$fichiers->isValid()) {
+                    return $this->apiResponse(400, "Un fichier n'est pas valide.", [], 400);
+                }
+    
+                $dir = 'Realisations/';
+                $str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                $str1 = '0123456789';
+                $shuffled = str_shuffle($str);
+                $shuffled1 = str_shuffle($str1);
+                $code = "Tarafes-" . substr($shuffled1, 0, 5) . substr($shuffled, 0, 1);
+                $absolutePath = public_path($dir);
+                $extension = $fichiers->getClientOriginalExtension();
+                $filename = $code . '.' . $extension;
+    
+                // Déplacer le fichier
+                $fichiers->move($absolutePath, $filename);
+    
+                $relativePaths[] = $dir . $filename;
+    
+                // Enregistrer dans la base de données
+                DB::table('img_realisations')->insert([
+                    'realisations_id' => $request->id_realisation,
+                    'filles_img_realisations' => $dir . $filename,
+                    'one_img_realisations' => $dir . $filename,
+                    'codeId' => $request->code_realisation,
+                    'created_at' => $today,
+                ]);
+            }
+    
+            return $this->apiResponse(200, "Documents ajoutés avec succès", ['files' => $relativePaths], 200);
+        } catch (\Exception $e) {
+            logger()->error('Erreur dans SaveAllImages', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return $this->apiResponse(500, "Une erreur est survenue lors de l'enregistrement des fichiers.", ['error' => $e->getMessage()], 500);
+        }
+    }
+    
+
+
+
+    public function SaveAllImages2(Request $request)
     {
         $today = date("Y-m-d");
         $relativePaths = "";
@@ -1618,7 +1686,7 @@ class HomeService
             DB::table('img_realisations')->insert([
                 'realisations_id' => $request->id_realisation,
                 'filles_img_realisations' => $relativePaths,
-                'one_img_realisations' => $request->one_img_realisations,
+                'one_img_realisations' => $relativePaths,
                 'codeId' => $request->code_realisation,
                 'created_at' => $today,
             ]);
@@ -1738,35 +1806,51 @@ class HomeService
 
     public function updateRealisations(Request $request)
     {
+
         $today = date("Y-m-d");
         $relativePath = "";
         $status = 0;
         $extension = "";
         $realisationsId = "";
-
+    
+        // Vérifie que les champs requis sont présents dans la requête
+        $request->validate([
+            'states' => 'required|integer',
+            'libelle' => 'required|string|max:255',
+            'description' => 'required|string',
+            'usersid' => 'required|integer',
+            'id_realisations' => 'required|integer',
+            'selected' => 'nullable|string',
+        ]);
+    
         if ($request->states == 1) {
-            $uploadedFiles = $request->fileData;
-            $dir = 'Realisations/';
-            $str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-            $str1 = '0123456789';
-            $shuffled = str_shuffle($str);
-            $shuffled1 = str_shuffle($str1);
-            $code = "Tarafe-" . substr($shuffled1, 0, 5) . "" . substr($shuffled, 0, 1);
-            $absolutePath = public_path($dir);
-            $extension = $uploadedFiles->getClientOriginalExtension();
-            $filename = $code . '.' . $extension;
-            $uploadedFiles->move($absolutePath, $filename);
-            $relativePath = $dir . $filename;
-
-            $realisationsId = DB::table('realisations')
-                ->where('id_realisations', $request->id_realisations)
-                ->update([
-                    'libelle_realisations' => $request->libelle,
-                    'descript_real' => $request->description,
-                    'users_realisations' => $request->usersid,
-                    'images_realisations' => $relativePath,
-                ]);
+            // Gestion des fichiers si 'states' est égal à 1
+            if ($request->hasFile('fileData')) {
+                $uploadedFiles = $request->file('fileData');
+                $dir = 'Realisations/';
+                $str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                $str1 = '0123456789';
+                $shuffled = str_shuffle($str);
+                $shuffled1 = str_shuffle($str1);
+                $code = "Tarafe-" . substr($shuffled1, 0, 5) . "" . substr($shuffled, 0, 1);
+                $absolutePath = public_path($dir);
+                $extension = $uploadedFiles->getClientOriginalExtension();
+                $filename = $code . '.' . $extension;
+                $uploadedFiles->move($absolutePath, $filename);
+                $relativePath = $dir . $filename;
+    
+                // Mise à jour de la base de données
+                $realisationsId = DB::table('realisations')
+                    ->where('id_realisations', $request->id_realisations)
+                    ->update([
+                        'libelle_realisations' => $request->libelle,
+                        'descript_real' => $request->description,
+                        'users_realisations' => $request->usersid,
+                        'images_realisations' => $relativePath,
+                    ]);
+            }
         } else if ($request->states == 0) {
+            // Mise à jour sans fichier si 'states' est égal à 0
             $realisationsId = DB::table('realisations')
                 ->where('id_realisations', $request->id_realisations)
                 ->update([
@@ -1774,10 +1858,32 @@ class HomeService
                     'descript_real' => $request->description,
                     'users_realisations' => $request->usersid,
                 ]);
+    
+            // Traitement des options sélectionnées
+            if ($request->selected) {
+                $tabselected = explode(",", $request->selected);
+                foreach ($tabselected as $item) {
+                    // Vérification si l'option existe déjà pour cette réalisation
+                    $exists = DB::table('op_realisation')
+                        ->where('idoption_realis_op_realisation', $item)
+                        ->where('idrealis_op_realisation', $request->id_realisations)
+                        ->exists();
+            
+                    if (!$exists) {
+                        // Si l'enregistrement n'existe pas, insérer la nouvelle ligne
+                        DB::table('op_realisation')->insert([
+                            'idoption_realis_op_realisation' => $item,
+                            'idrealis_op_realisation' => $request->id_realisations,
+                        ]);
+                    }
+                }
+            }
         }
-
-        return $this->apiResponse(200, "Réalisations mises à jour avec succès", $realisationsId, 200);
+    
+        // Réponse API avec succès
+        return $this->apiResponse(200, "Réalisations mises à jour avec succès",$request->id_realisations, 200);
     }
+    
 
     public function addMessages($request)
     {

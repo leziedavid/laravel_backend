@@ -71,7 +71,6 @@ class TicketController extends Controller
         ]);
 
         $ticket = (new TicketService)->move($data, $ticket);
-      
         return new TicketResource($ticket);
     }
 }

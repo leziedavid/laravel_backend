@@ -57,6 +57,12 @@ return [
             'channels' => explode(',', env('LOG_STACK', 'single')),
             'ignore_exceptions' => false,
         ],
+        
+        'logger' => [
+            'driver' => 'single',  // ou 'daily' pour un fichier par jour
+            'path' => storage_path('logs/custom_log.log'), // chemin où vous voulez enregistrer le log
+            'level' => 'error', // Niveau de log
+        ],
 
         'single' => [
             'driver' => 'single',

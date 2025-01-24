@@ -274,6 +274,11 @@ class HomeController extends Controller
     {
         return $this->homeService->Addachats($request);
     }
+    // Ajouter les images du produits crée
+    public function SaveAllImages(Request $request)
+    {
+        return $this->homeService->SaveAllImages($request);
+    }
 
     // Ajouter une URL de logo
     public function Addlogosurl(Request $request)

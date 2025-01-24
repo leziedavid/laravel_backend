@@ -15,11 +15,14 @@ return [
     |
     */
 
-    'paths' => ['*'],
+    'paths' => ['api/*', 'sanctum/csrf-cookie'], // Applique CORS sur les routes API
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [env('FRONTEND_URL', 'http://localhost:3000')],
+    'allowed_origins' => [
+        // env('FRONTEND_URL', 'http://localhost:3000'),  // Environnement local
+        '*',  // Permet tous les autres domaines
+    ],
 
     'allowed_origins_patterns' => [],
 

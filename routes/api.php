@@ -10,9 +10,14 @@ use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ProduitController;
+use App\Http\Controllers\Api\TransactionController;
+
+use Laravel\Sanctum\Http\Controllers\CsrfCookieController;
 
 
-Route::group(['prefix' => 'api/v1/'], function () {
+
+Route::group(['prefix' => 'v1/'], function () {
+    // Route::get('sanctum/csrf-cookie', [CsrfCookieController::class, 'show']);
 
     Route::get('statistique-orders/{id}', [AuthController::class, 'statistiqueOrders']);
     Route::get('statistique-visites', [AuthController::class, 'statistiqueVisites']);
@@ -80,7 +85,10 @@ Route::group(['prefix' => 'api/v1/'], function () {
     // Récupérer les blogs d'une catégorie par ID
     Route::get('category/{id}/blogs', [AuthController::class, 'CategoriesBlogById']);
 
+// import de la compta 
 
+    Route::post('transactions/import', [TransactionController::class, 'import']);
+    Route::get('transactions', [TransactionController::class, 'alltransactions']);
 
     Route::post('confirmation-mail', [HomeController::class, 'confirmationMail']);
     Route::post('send-emails-devis', [HomeController::class, 'sendEmailsDevis']);
@@ -200,9 +208,9 @@ Route::group(['prefix' => 'api/v1/'], function () {
     // Route pour sauvegarder les images de la galerie
     Route::post('savegallerie-images', [HomeController::class, 'saveGallerieImages']);
     // Route pour enregistrer les réalisations
-    Route::post('realisations', [HomeController::class, 'saveRealisations']);
+    Route::post('save-realisations', [HomeController::class, 'saveRealisations']);
     // Route pour mettre à jour les réalisations
-    Route::put('realisations/{id}', [HomeController::class, 'updateRealisations']);
+    Route::post('update-realisations', [HomeController::class, 'updateRealisations']);
     // Route pour ajouter un message
     Route::post('messages', [HomeController::class, 'addMessages']);
     // Route pour ajouter une signature
@@ -231,6 +239,9 @@ Route::group(['prefix' => 'api/v1/'], function () {
     Route::get('homepage-data', [HomeController::class, 'index']);
     Route::get('all-menu', [HomeController::class, 'MegaMenu']);
 
+    // lancer des commandes
+    Route::post('addOrders', [HomeController::class,'Addachats']);
+    Route::post('saveAllImages', [HomeController::class,'SaveAllImages']);
 
     // Route pour obtenir tous les produits d'une boutique
     Route::get('produits/store/{id}', [ProduitController::class, 'getAllProduitsByStore']);
@@ -350,7 +361,7 @@ Route::group(['prefix' => 'api/v1/'], function () {
     Route::post('soussouscategories/update', [ProduitController::class, 'updatesoussouscategories']);
     Route::delete('soussouscategories/delete/{id}', [ProduitController::class, 'deletesoussouscategories']);
 
-    // Routes pour gérer les produits
+    // Routes pour gérer les produits    
     Route::post('produit/add', [ProduitController::class, 'addProduits']);
     Route::post('produit/update', [ProduitController::class, 'updateproduits']);
     // Route pour supprimer une image
@@ -379,38 +390,38 @@ Route::group(['prefix' => 'api/v1/'], function () {
 
 
 
-Route::middleware(['auth:sanctum'])->group(function () {
+// Route::middleware(['auth:sanctum'])->group(function () {
 
-    Route::get("/me", fn(Request $request) => $request->user());
+//     Route::get("/me", fn(Request $request) => $request->user());
 
-    Route::post('/email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
-        ->middleware(['throttle:6,1'])
-        ->name('verification.send');
+//     Route::post('/email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
+//         ->middleware(['throttle:6,1'])
+//         ->name('verification.send');
 
-    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
-        ->name('logout');
+//     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
+//         ->name('logout');
 
-    Route::get("/projects", [ProjectController::class, 'index']);
-    Route::post("/project", [ProjectController::class, 'store']);
-    Route::get("/project/{project}", [ProjectController::class, 'show']);
-    Route::put("/project/{project}", [ProjectController::class, 'update']);
-    Route::delete("/project/{project}", [ProjectController::class, 'destroy']);
-
-
-    // Route::get("project/{project}/boards", [BoardController::class, 'index']);
-
-    Route::post("/board", [BoardController::class, 'store']);
-    // Route::get("/board/{board}", [BoardController::class, 'show']);
-    Route::put("/board/{board}", [BoardController::class, 'update']);
-    Route::delete("/board/{board}", [BoardController::class, 'destroy']);
+//     Route::get("/projects", [ProjectController::class, 'index']);
+//     Route::post("/project", [ProjectController::class, 'store']);
+//     Route::get("/project/{project}", [ProjectController::class, 'show']);
+//     Route::put("/project/{project}", [ProjectController::class, 'update']);
+//     Route::delete("/project/{project}", [ProjectController::class, 'destroy']);
 
 
-    Route::post("/ticket", [TicketController::class, 'store']);
-    Route::get("/ticket/{ticket}", [TicketController::class, 'show']);
-    Route::put("/ticket/{ticket}", [TicketController::class, 'update']);
-    Route::delete("/ticket/{ticket}", [TicketController::class, 'destroy']);
+//     // Route::get("project/{project}/boards", [BoardController::class, 'index']);
+
+//     Route::post("/board", [BoardController::class, 'store']);
+//     // Route::get("/board/{board}", [BoardController::class, 'show']);
+//     Route::put("/board/{board}", [BoardController::class, 'update']);
+//     Route::delete("/board/{board}", [BoardController::class, 'destroy']);
 
 
-    Route::post("/ticket/{ticket}/move", [TicketController::class, 'move']);
-    Route::post("/ticket/{ticket}/assign", [TicketController::class, 'assign']);
-});
+//     Route::post("/ticket", [TicketController::class, 'store']);
+//     Route::get("/ticket/{ticket}", [TicketController::class, 'show']);
+//     Route::put("/ticket/{ticket}", [TicketController::class, 'update']);
+//     Route::delete("/ticket/{ticket}", [TicketController::class, 'destroy']);
+
+
+//     Route::post("/ticket/{ticket}/move", [TicketController::class, 'move']);
+//     Route::post("/ticket/{ticket}/assign", [TicketController::class, 'assign']);
+// });
