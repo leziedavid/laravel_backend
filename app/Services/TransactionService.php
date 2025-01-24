@@ -116,25 +116,175 @@ class TransactionService
             return $this->apiResponse(500, "Une erreur est survenue lors de l'importation.", $records, 500);
         }
     }
-    
+
 
     public function getAlltransactions($filters)
     {
         // Récupérer les paramètres de filtrage
-        $page = $filters['page'];
-        $limit = $filters['limit'];
-        $search = $filters['search'];
+        $page = $filters['page']; //permet de faire la pagination
+        $limit = $filters['limit']; //permet de faire la pagination
+        $search = $filters['search']; //permet de faire la recherche sur une plage de date
+        $category = $filters['category']; //permet de faire la recherche sur le type_operation
+        $payment = $filters['payment']; //permet de faire la recherche sur le moyen de paiement
+        $selectedYears = $filters['selectedYears']; //permet de faire la recherche sur l'année des transactions
+
+        // dd($category);
         // Construire la requête de base
         $query = DB::table('transactions')->orderBy('transactions.id', 'desc')->distinct();
-        // Ajouter un filtre de recherche sur le champ 'transaction_id' si un terme de recherche est fourni
-        // if ($search) {
-        //     $query->where('transactions.date', 'like', '%' . $search . '%');
-        // }
+
+        // Appliquer les filtres sur la plage de dates (si 'search' est défini)
+        if (!empty($search) && strpos($search, ',') !== false) {
+            // Séparer la plage de dates (search : '2025-01-22,2025-02-20')
+            list($dateDeb, $dateFin) = explode(',', $search);
+
+            // Vérifier que les deux dates sont valides
+            if (strtotime($dateDeb) !== false && strtotime($dateFin) !== false) {
+                $query->whereBetween('date', [$dateDeb, $dateFin]);
+            }
+        }
+
+        // Appliquer le filtre par catégorie (type_operation)
+        if (!empty($payment)) {
+            $query->where('type_operation', '=', $payment);
+        }
+
+        // Appliquer le filtre par moyen de paiement (sortie_caisse, sortie_banque, entree_caisse, entree_banque)
+        if (!empty($category)) {
+            // Le paiement peut concerner plusieurs colonnes, il faut donc vérifier chaque colonne
+            if ($category === 'sortie_caisse') {
+                $query->where('sortie_caisse', '>', 0); // Ex : "sortie_caisse" > 0
+            } elseif ($category === 'sortie_banque') {
+                $query->where('sortie_banque', '>', 0);
+            } elseif ($category === 'entree_caisse') {
+                $query->where('entree_caisse', '>', 0);
+            } elseif ($category === 'entree_banque') {
+                $query->where('entree_banque', '>', 0);
+            }
+        }
+
+        // Appliquer le filtre par année (si 'selectedYears' est défini)
+        if (!empty($selectedYears) && is_numeric($selectedYears)) {
+            $query->whereYear('date', '=', $selectedYears);
+        }
+
         // Ajouter la pagination en utilisant la méthode paginate de Laravel
         $orders = $query->paginate($limit, ['*'], 'page', $page);
+
         // Retourner la réponse API avec les commandes paginées
         return $this->apiResponse(200, "Consultation des commandes", $orders, 200);
     }
 
 
+    public function getTransactionTotals($filters)
+    {
+        // Récupérer les paramètres de filtrage
+        $page = $filters['page']; //permet de faire la pagination
+        $limit = $filters['limit']; //permet de faire la pagination
+        $search = $filters['search']; //permet de faire la recherche sur une plage de date
+        $category = $filters['category']; //permet de faire la recherche sur le type_operation
+        $payment = $filters['payment']; //permet de faire la recherche sur le moyen de paiement
+        $selectedYears = $filters['selectedYears']; //permet de faire la recherche sur l'année des transactions
+    
+        // Construire la requête de base pour les totaux (pas besoin de pagination ici)
+        $queryTotals = DB::table('transactions');
+    
+        // Appliquer les filtres sur la plage de dates (si 'search' est défini)
+        if (!empty($search) && strpos($search, ',') !== false) {
+            // Séparer la plage de dates (search : '2025-01-22,2025-02-20')
+            list($dateDeb, $dateFin) = explode(',', $search);
+    
+            // Vérifier que les deux dates sont valides
+            if (strtotime($dateDeb) !== false && strtotime($dateFin) !== false) {
+                $queryTotals->whereBetween('date', [$dateDeb, $dateFin]);
+            }
+        }
+    
+        // Appliquer le filtre par catégorie (type_operation)
+        if (!empty($payment)) {
+            $queryTotals->where('type_operation', '=', $payment);
+        }
+    
+        // Appliquer le filtre par moyen de paiement (sortie_caisse, sortie_banque, entree_caisse, entree_banque)
+        if (!empty($category)) {
+            // Le paiement peut concerner plusieurs colonnes, il faut donc vérifier chaque colonne
+            if ($category === 'sortie_caisse') {
+                $queryTotals->where('sortie_caisse', '>', 0); // Ex : "sortie_caisse" > 0
+            } elseif ($category === 'sortie_banque') {
+                $queryTotals->where('sortie_banque', '>', 0);
+            } elseif ($category === 'entree_caisse') {
+                $queryTotals->where('entree_caisse', '>', 0);
+            } elseif ($category === 'entree_banque') {
+                $queryTotals->where('entree_banque', '>', 0);
+            }
+        }
+    
+        // Appliquer le filtre par année (si 'selectedYears' est défini)
+        if (!empty($selectedYears) && is_numeric($selectedYears)) {
+            $queryTotals->whereYear('date', '=', $selectedYears);
+        }
+    
+        // Calcul des totaux pour chaque colonne sans `distinct`
+        $totals = $queryTotals->selectRaw('
+            SUM(sortie_caisse) as total_sortie_caisse,
+            SUM(sortie_banque) as total_sortie_banque,
+            SUM(entree_caisse) as total_entree_caisse,
+            SUM(entree_banque) as total_entree_banque
+        ')->first(); // Pas besoin de DISTINCT ici
+    
+        // Calculer le total général
+        $totalGeneral = (
+            $totals->total_sortie_caisse + 
+            $totals->total_sortie_banque + 
+            $totals->total_entree_caisse + 
+            $totals->total_entree_banque
+        );
+    
+        // Construire la requête pour la pagination des transactions
+        $queryTransactions = DB::table('transactions')->orderBy('transactions.id', 'desc');
+    
+        // Appliquer à nouveau les mêmes filtres pour la pagination
+        if (!empty($search) && strpos($search, ',') !== false) {
+            list($dateDeb, $dateFin) = explode(',', $search);
+            if (strtotime($dateDeb) !== false && strtotime($dateFin) !== false) {
+                $queryTransactions->whereBetween('date', [$dateDeb, $dateFin]);
+            }
+        }
+    
+        if (!empty($payment)) {
+            $queryTransactions->where('type_operation', '=', $payment);
+        }
+    
+        if (!empty($category)) {
+            if ($category === 'sortie_caisse') {
+                $queryTransactions->where('sortie_caisse', '>', 0);
+            } elseif ($category === 'sortie_banque') {
+                $queryTransactions->where('sortie_banque', '>', 0);
+            } elseif ($category === 'entree_caisse') {
+                $queryTransactions->where('entree_caisse', '>', 0);
+            } elseif ($category === 'entree_banque') {
+                $queryTransactions->where('entree_banque', '>', 0);
+            }
+        }
+    
+        if (!empty($selectedYears) && is_numeric($selectedYears)) {
+            $queryTransactions->whereYear('date', '=', $selectedYears);
+        }
+    
+        // Ajouter la pagination en utilisant la méthode paginate de Laravel
+        // $orders = $queryTransactions->paginate($limit, ['*'], 'page', $page);
+    
+        // Retourner la réponse API avec les totaux et les commandes paginées
+        return $this->apiResponse(200, "Consultation des commandes avec totaux", [
+            'totals' => [
+                'total_sortie_caisse' => floor($totals->total_sortie_caisse),
+                'total_sortie_banque' => floor($totals->total_sortie_banque),
+                'total_entree_caisse' => floor($totals->total_entree_caisse),
+                'total_entree_banque' => floor($totals->total_entree_banque),
+                'total_general' => floor($totalGeneral)
+            ]
+        ], 200);
+        
+    }
+    
+    
 }

@@ -89,6 +89,7 @@ Route::group(['prefix' => 'v1/'], function () {
 
     Route::post('transactions/import', [TransactionController::class, 'import']);
     Route::get('transactions', [TransactionController::class, 'alltransactions']);
+    Route::get('getTransactionTotal', [TransactionController::class, 'getTransactionTotal']);
 
     Route::post('confirmation-mail', [HomeController::class, 'confirmationMail']);
     Route::post('send-emails-devis', [HomeController::class, 'sendEmailsDevis']);
