@@ -512,9 +512,16 @@ class HomeController extends Controller
         }
     
         // Action pour récupérer toutes les newsletters
-        public function getAllNewsletters()
+        public function getAllNewsletters(Request $request)
         {
-            return $this->homeService->getAllnewsletters();
+             // Récupérer les paramètres de la requête (page, limit, search)
+            $filters = [
+                'page' => $request->query('page', 1),   // Par défaut, la page est 1
+                'limit' => $request->query('limit', 10), // Par défaut, la limite est 10
+                'search' => $request->query('search', null), // Si 'search' est fourni, on l'utilise, sinon null
+            ];
+            // Passer les filtres au service pour récupérer les données
+            return $this->homeService->getAllnewsletters($filters);
         }
 
     // Récupérer les employés

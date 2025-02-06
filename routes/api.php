@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ProduitController;
 use App\Http\Controllers\Api\TransactionController;
+use App\Http\Controllers\Api\ExportController;
 
 use Laravel\Sanctum\Http\Controllers\CsrfCookieController;
 
@@ -41,6 +42,8 @@ Route::group(['prefix' => 'v1/'], function () {
     Route::get('dashboard/{id}', [AuthController::class, 'getDashboard']);
     // Route pour gérer la connexion de l'utilisateur
     Route::post('auth/login', [AuthController::class, 'login']);
+    Route::get('auth/getUserFromToken', [AuthController::class, 'getUserFromToken']);
+    Route::post('auth/logout', [AuthController::class, 'logout']);
 
 
     // Route pour changer le statut d'un utilisateur
@@ -90,6 +93,7 @@ Route::group(['prefix' => 'v1/'], function () {
     Route::post('transactions/import', [TransactionController::class, 'import']);
     Route::get('transactions', [TransactionController::class, 'alltransactions']);
     Route::get('getTransactionTotal', [TransactionController::class, 'getTransactionTotal']);
+    Route::get('export-transactions', [ExportController::class, 'exportTransactions'])->name('export.transactions');
 
     Route::post('confirmation-mail', [HomeController::class, 'confirmationMail']);
     Route::post('send-emails-devis', [HomeController::class, 'sendEmailsDevis']);
@@ -223,9 +227,9 @@ Route::group(['prefix' => 'v1/'], function () {
     // Route pour ajouter une visite
     Route::post('visites', [HomeController::class, 'addVisit']);
     // Route pour ajouter une nouvelle newsletter
-    Route::post('newsletter', [HomeController::class, 'addNewletter']);
+    Route::post('contacts', [HomeController::class, 'addNewletter']);
     // Route pour obtenir toutes les newsletters
-    Route::get('newsletters', [HomeController::class, 'getAllNewsletters']);
+    Route::get('geAllMessages', [HomeController::class, 'getAllNewsletters']);
     // Route pour récupérer les employés
     Route::get('employees', [HomeController::class, 'employees']);
     // Route pour récupérer les commentaires d'un blog par ID

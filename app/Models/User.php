@@ -14,10 +14,10 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasApiTokens, HasUuids;
+    use HasFactory, Notifiable, HasApiTokens;
 
     /**
-     * The attributes that are mass assignable.
+     * Les attributs assignables en masse.
      *
      * @var array<int, string>
      */
@@ -25,10 +25,14 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'contact',
+        'status',
+        'is_admin',
+        'created_at',
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
+     * Les attributs cachés pour la sérialisation.
      *
      * @var array<int, string>
      */
@@ -38,20 +42,23 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
+     * Les attributs qui doivent être castés.
      *
-     * @return array<string, string>
+     * @var array<string, string>
      */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed', // Laravel gère maintenant automatiquement le hachage.
+        'status' => 'boolean',
+    ];
 
-    public function projects() : HasMany
+    /**
+     * Relation avec les projets.
+     */
+    public function projects(): HasMany
     {
         return $this->hasMany(Project::class);
     }
+
+
 }

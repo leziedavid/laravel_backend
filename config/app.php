@@ -123,4 +123,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+//     'providers' => [
+//         // Autres services...
+//         Maatwebsite\Excel\ExcelServiceProvider::class,
+//     ],
+
+//     'aliases' => [
+//     // Autres alias...
+//     'Excel' => Maatwebsite\Excel\Facades\Excel::class,
+// ],
+
+
+
 ];

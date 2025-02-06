@@ -36,7 +36,6 @@ class RegisteredUserController extends Controller
 
         $user->sendEmailVerificationNotification();
 
-
         Auth::login($user);
 
         return response()->json([

@@ -1620,6 +1620,7 @@ class HomeService
             }
     
             foreach ($files as $fichiers) {
+
                 if (!$fichiers || !$fichiers->isValid()) {
                     return $this->apiResponse(400, "Un fichier n'est pas valide.", [], 400);
                 }
@@ -1719,33 +1720,66 @@ class HomeService
         return $this->apiResponse(200, "Images récupérées avec succès", $response, 200);
     }
 
+
+
     public function SavegallerieImages(Request $request)
     {
-        $today = date("Y-m-d");
-        $relativePaths = "";
-        $extension = "";
+        try {
 
-        foreach ($request->file('files') as $fichiers) :
-            $dir = 'GallerieImages/';
-            $str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-            $str1 = '0123456789';
-            $shuffled = str_shuffle($str);
-            $shuffled1 = str_shuffle($str1);
-            $code = "Tarafes-" . substr($shuffled1, 0, 5) . "" . substr($shuffled, 0, 1);
-            $absolutePath = public_path($dir);
-            $extension = $fichiers->getClientOriginalExtension();
-            $filename = $code . '.' . $extension;
-            $fichiers->move($absolutePath, $filename);
-            $relativePaths = $dir . $filename;
+            if (!$request->hasFile('files')) {
+                return $this->apiResponse(400, "Aucun fichier n'a été envoyé.", [], 400);
+            }
+    
+            $today = date("Y-m-d");
+            $relativePaths = [];
+            $files = $request->file('files');
+    
+            // Si un seul fichier est envoyé, le convertir en tableau
+            if (!is_array($files)) {
+                $files = [$files];
+            }
+    
+            foreach ($files as $fichiers) {
+                
+                if (!$fichiers || !$fichiers->isValid()) {
+                    return $this->apiResponse(400, "Un fichier n'est pas valide.", [], 400);
+                }
 
-            DB::table('gallerie_images')->insert([
-                'libelle_gallerie_images' => $request->libelle_gallerie_images,
-                'files_gallerie_images' => $relativePaths,
-                'created_at' => $today,
+                $dir = 'GallerieImages/';
+                $str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                $str1 = '0123456789';
+                $shuffled = str_shuffle($str);
+                $shuffled1 = str_shuffle($str1);
+                $code = "Tarafes-" . substr($shuffled1, 0, 5) . "" . substr($shuffled, 0, 1);
+                $absolutePath = public_path($dir);
+                $extension = $fichiers->getClientOriginalExtension();
+                $filename = $code . '.' . $extension;
+                $fichiers->move($absolutePath, $filename);
+                $relativePaths = $dir . $filename;
+    
+                // Déplacer le fichier
+                $labele="Images";
+
+                // $relativePaths[] = $dir . $filename;
+
+                // Enregistrer dans la base de données
+                DB::table('gallerie_images')->insert([
+                    'libelle_gallerie_images' => $labele,
+                    'files_gallerie_images' => $dir.$filename,
+                    'created_at' => $today,
+                ]);
+            }
+    
+            return $this->apiResponse(200, "Images ajoutés avec succès", [], 200);
+
+        } catch (\Exception $e) {
+
+            logger()->error('Erreur dans SaveAllImages', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-        endforeach;
-
-        return $this->apiResponse(200, "Document ajouté avec succès", ['files' => $relativePaths], 200);
+            return $this->apiResponse(500, "Une erreur est survenue lors de l'enregistrement des fichiers.", ['error' => $e->getMessage()], 500);
+        }
     }
 
     public function SaveRealisations(Request $request)
@@ -1974,6 +2008,7 @@ class HomeService
     {
         $today = date("Y-m-d");
         $newsletterId = DB::table('newsletters')->insertGetId([
+            'objets' => $request->objets,
             'nom_newsletters' => $request->nomPrenom,
             'email_newsletters' => $request->email,
             'contact_newsletters' => $request->phone,
@@ -1983,14 +2018,33 @@ class HomeService
         ]);
 
         $message = $newsletterId ? "Inscription à la newsletter réussie" : "Échec de l'inscription à la newsletter";
+        // return $this->apiResponse(200, 'text', $request->objets, 200);
         return $this->apiResponse(200, $message, $newsletterId, 200);
     }
 
-    public function getAllnewsletters()
+    public function getAllnewsletters($filters)
     {
-        $newsletters = DB::table('newsletters')->orderBy('newsletters_id', 'DESC')->distinct()->paginate(6);
+        // Récupérer les paramètres de filtrage
+        $page = $filters['page'] ?? 1; // Défaut à 1 si aucun paramètre de page n'est fourni
+        $limit = $filters['limit'] ?? 6; // Défaut à 6 éléments par page
+        $search = $filters['search'] ?? ''; // Le terme de recherche, vide si aucun
+
+        // Construire la requête de base pour les newsletters
+        $query = DB::table('newsletters')->orderBy('newsletters_id', 'DESC')->distinct();
+        // Ajouter un filtre de recherche sur le champ 'objets' ou 'nom_newsletters' si un terme de recherche est fourni
+        if ($search) {
+            $query->where(function ($query) use ($search) {
+                $query->where('objets', 'like', '%' . $search . '%')
+                ->orWhere('nom_newsletters', 'like', '%' . $search . '%')
+                ->orWhere('texte_newsletters', 'like', '%' . $search . '%');
+            });
+        }
+        // Appliquer la pagination en utilisant les paramètres de page et de limite
+        $newsletters = $query->paginate($limit, ['*'], 'page', $page);
+        // Retourner la réponse API avec les newsletters paginées
         return $this->apiResponse(200, "Liste des newsletters récupérées avec succès", $newsletters, 200);
     }
+    
 
     public function employees()
     {

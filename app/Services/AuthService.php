@@ -4,6 +4,7 @@ namespace App\Services;  // La déclaration du namespace doit être la première
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use App\Models\User;
 use App\Mail\Notifications;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
@@ -11,6 +12,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use PhpParser\Node\Expr\FuncCall;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthService
 {
@@ -405,42 +407,160 @@ class AuthService
         return $this->apiResponse(200, "Tableau de bord récupéré avec succès", $response, 200);
     }
 
+    /**
+     * Connexion utilisateur et génération d'un token Sanctum
+     */
     public function login(Request $request)
     {
-        // Connexion utilisateur
-        $login = $request->email;
-        $success = '';
-        $message = '';
-        $data = '';
+        // Validation des données d'entrée
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string|min:6',
+        ]);
 
-        $user = DB::table('users')
-            ->where('email', '=', $login)
-            ->where('status', '=', 1)
-            ->get();
+        // Récupérer l'utilisateur actif avec Eloquent
+        $user = User::where('email', $request->email)
+            ->where('status', 1)
+            ->first();
 
-        if (count($user) > 0) {
-            $theuser = json_decode($user);
-            $theuserid = $theuser[0]->id;
-
-            if (Hash::check($request->password, $theuser[0]->password)) {
-                // Connexion réussie
-                $success = true;
-                $message = 'Connexion réussie';
-                $data = $user;
-            } else {
-                // Mot de passe incorrect
-                $success = false;
-                $message = 'Mot de passe incorrect';
-            }
-        } else {
-            // Utilisateur non trouvé
-            $success = false;
-            $message = 'Identifiant incorrect';
+        if (!$user) {
+            return $this->apiResponse(401, 'Identifiant incorrect', null, 401);
         }
 
-        // Retourne une réponse structurée
-        return $this->apiResponse(200, $message, $data, 200);
+        // Vérifier le mot de passe
+        if (!Hash::check($request->password, $user->password)) {
+            return $this->apiResponse(401, 'Mot de passe incorrect', null, 401);
+        }
+        // Créer un token avec l'ID de l'utilisateur
+        // $token = $user->createToken('YourAppName', ['id:' . $user->id])->plainTextToken;
+
+            // Définir la date d'expiration du token (ex: 60 minutes)
+            $expiration = now()->addMinutes(60)->format('Y-m-d H:i:s');
+            // Créer un token avec une expiration intégrée dans les capacités du token
+            $token = $user->createToken('YourAppName', ['id:' . $user->id, 'expires_at:' . $expiration])->plainTextToken;
+
+        // Enregistrer la session de l'utilisateur
+        DB::table('sessions')->insert([
+            'user_id' => $user->id,
+            'ip_address' => $request->ip(), // Récupérer l'adresse IP
+            'user_agent' => $request->header('User-Agent'), // Récupérer le User-Agent
+            'payload' => $token, // Enregistrer le token dans payload
+            'last_activity' => now()->timestamp, // Enregistrer l'heure de dernière activité
+        ]);
+
+        return $this->apiResponse(200, 'Connexion réussie', [
+            // 'user' => $user,
+            'token' => $token
+        ], 200);
+
+
     }
+
+
+    /**
+     * Récupérer les données de l'utilisateur en utilisant le token
+     *
+     * @param string $token
+     * @return mixed
+     */
+    public function getUserDataFromToken($token)
+    {
+        // Décodez le token pour extraire l'ID de l'utilisateur
+        $userId = $this->getUserIdFromToken($token);
+
+        if ($userId) {
+            // Récupérer les données de l'utilisateur avec l'ID
+            $user = User::find($userId);
+            if ($user) {
+                return $this->apiResponse(200, 'success', $user, 200);
+            }else{
+            return $this->apiResponse(404, 'Utilisateur non trouvé', '', 404);
+            }
+        }
+        return $this->apiResponse(401, 'Token invalide', '', 401);
+    }
+
+    public function getUserIdFromToken($token)
+    {
+        try {
+            // Décoder le token en utilisant Sanctum
+            $user = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
+            // Si le token est valide, retourner l'ID de l'utilisateur
+            if ($user) {
+                return $user->tokenable->id;  // Retourne l'ID de l'utilisateur
+            }
+        } catch (\Exception $e) {
+
+            dd($e);
+            // Si une erreur se produit pendant le décodage, retourne null
+            return null;
+        }
+    
+        // return null;  // Si le token est invalide
+    }
+
+
+    /**
+     * Gère la déconnexion de l'utilisateur.
+     *
+     * @param string $token
+     * @return mixed
+     */
+
+    public function logout(string $token)
+    {
+        // Debug : Vérifier que le token est bien reçu
+        // dd($token);
+    
+        // Vérifier si le token existe dans la table personal_access_tokens
+        $tokenData = PersonalAccessToken::findToken($token);
+    
+        if (!$tokenData) {
+            return $this->apiResponse(400, 'Token invalide ou utilisateur non trouvé', null, 400);
+        }
+    
+        // Récupérer l'utilisateur associé au token
+        $user = $tokenData->tokenable;
+    
+        if ($user) {
+            // Supprimer le token spécifique
+            $tokenData->delete();
+    
+            return $this->apiResponse(200, 'Déconnexion réussie', null, 200);
+        }
+    
+        return $this->apiResponse(400, 'Échec de la déconnexion', null, 400);
+    }
+    
+
+    
+    
+    
+
+    public function getUserIdFromToken2($token)
+{
+    // Supprime le "Bearer " du token s'il est passé dans les headers
+    if (substr($token, 0, 7) === "Bearer ") {
+        $token = substr($token, 7);
+    }
+
+    try {
+        // Décoder le token en utilisant Sanctum
+        $tokenInstance = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
+
+        // Si le token est valide, retourner l'ID de l'utilisateur
+        if ($tokenInstance) {
+            return $tokenInstance->tokenable->id;
+        }
+    } catch (\Exception $e) {
+        // Si une erreur se produit pendant le décodage, retourne null
+        return null;
+    }
+
+    return null;  // Si le token est invalide
+}
+
+
 
     public function changesstatUsers($id, $status)
     {
@@ -480,45 +600,48 @@ class AuthService
         return $this->apiResponse(200, "Compte supprimé avec succès", [], 200);
     }
 
-    public function Addusers($request)
+/**
+     * Ajout d'un nouvel utilisateur et génération d'un token Sanctum
+     */
+    public function Addusers(Request $request)
     {
-        $password = Hash::make($request->password);
-        $nomcomplet = $request->nom . " " . $request->prenom;
-        $today = date("Y-m-d");
-        $status = 1;
-        $is_admin = "Clients"; // Vous pouvez changer cela en fonction de l'administration
 
-        $users = DB::table('users')->insertGetId([
-            'name' => $nomcomplet,
+        // Création de l'utilisateur
+        $user = User::create([
+            'name' => $request->nom . " " . $request->prenom,
             'contact' => $request->numero,
             'email' => $request->email,
-            'password' => $password,
-            'status' => $status,
-            'created_at' => $today,
-            'is_admin' => $is_admin,
+            'password' => Hash::make($request->password),
+            'status' => 1,
+            'created_at' => now(),
+            'is_admin' => 'Clients', // Par défaut, utilisateur standard
         ]);
 
-        if ($users) {
-            $user = DB::table('users')
-                ->where('email', '=', $request->email)
-                ->where('status', '=', 1)
-                ->get();
-
-            $response = [
-                'success' => true,
-                'message' => 'Votre compte a été créé avec succès',
-                'data' => $user,
-            ];
-        } else {
-            $response = [
-                'success' => false,
-                'message' => "Quelque chose s'est mal passé, veuillez recommencer",
-                'data' => "",
-            ];
+        if (!$user) {
+            return $this->apiResponse(500, "Quelque chose s'est mal passé, veuillez recommencer", null, 500);
         }
 
-        return $this->apiResponse(200, "Réponse de connexion", $response, 200);
+        // Créer un token avec l'ID de l'utilisateur
+        $token = $user->createToken('YourAppName', ['id:' . $user->id])->plainTextToken;
+
+        return $this->apiResponse(201, 'Votre compte a été créé avec succès', [
+            // 'user' => $user,
+            'token' => $token,
+        ], 201);
     }
+
+    /**
+     * Fonction générique pour structurer les réponses API
+     */
+    private function apiResponse($status, $message, $data, $code)
+    {
+        return response()->json([
+            'status' => $status,
+            'message' => $message,
+            'data' => $data
+        ], $code);
+    }
+
 
     public function updateDataUsers($request)
     {
@@ -769,5 +892,10 @@ class AuthService
 
         return $this->apiResponse(200, "Blogs récupérés pour la catégorie spécifiée", $blogs, 200);
     }
+
+    // nouvealle fonction :
+
+
+
     
 }

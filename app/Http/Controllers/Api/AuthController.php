@@ -6,8 +6,12 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Services\AuthService;  // Importation du service AuthService
 
+use App\Traits\ApiResponse;
 class AuthController extends Controller
 {
+
+    use ApiResponse;
+
     // Déclaration de la propriété pour stocker l'instance du service
     protected $authService;
 
@@ -123,6 +127,36 @@ class AuthController extends Controller
         return $this->authService->login($request);
     }
 
+    public function getUserFromToken(Request $request)
+    {
+        // Récupérer le token de la requête
+        $token = $request->query('token');
+        if (!$token) {
+            return $this->apiResponse(400, "Token invalide ou manquant.", [], 400);
+        }
+        // Appel de la méthode du service
+        return $this->authService->getUserDataFromToken($token);
+    }
+
+    public function logout(Request $request)
+    {
+        // Récupérer le token depuis l'en-tête Authorization
+        $token = $request->bearerToken();
+    
+        // Si le token n'est pas dans l'en-tête, le récupérer depuis le corps de la requête
+        if (!$token) {
+            $token = $request->input('token');
+        }
+    
+        // Vérifier que le token est bien une chaîne non vide
+        if (!$token || !is_string($token)) {
+            return $this->apiResponse(400, "Token invalide ou manquant.", [], 400);
+        }
+    
+        return $this->authService->logout($token);
+    }
+    
+    
     // Méthode pour changer le statut d'un utilisateur
     public function changeStatutUsers($id, $status)
     {
