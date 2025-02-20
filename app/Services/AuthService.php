@@ -449,7 +449,7 @@ class AuthService
         ]);
 
         return $this->apiResponse(200, 'Connexion réussie', [
-            // 'user' => $user,
+            'user' => $user->is_admin,
             'token' => $token
         ], 200);
 
@@ -628,18 +628,6 @@ class AuthService
             // 'user' => $user,
             'token' => $token,
         ], 201);
-    }
-
-    /**
-     * Fonction générique pour structurer les réponses API
-     */
-    private function apiResponse($status, $message, $data, $code)
-    {
-        return response()->json([
-            'status' => $status,
-            'message' => $message,
-            'data' => $data
-        ], $code);
     }
 
 

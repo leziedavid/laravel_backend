@@ -2026,7 +2026,7 @@ class HomeService
     {
         // Récupérer les paramètres de filtrage
         $page = $filters['page'] ?? 1; // Défaut à 1 si aucun paramètre de page n'est fourni
-        $limit = $filters['limit'] ?? 6; // Défaut à 6 éléments par page
+        $limit = $filters['limit'] ?? 10; // Défaut à 6 éléments par page
         $search = $filters['search'] ?? ''; // Le terme de recherche, vide si aucun
 
         // Construire la requête de base pour les newsletters

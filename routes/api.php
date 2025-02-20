@@ -278,7 +278,7 @@ Route::group(['prefix' => 'v1/'], function () {
     // Récupérer une option de réalisation par son ID
     Route::get('option-realisation/{id}', [ProduitController::class, 'getOpRealisation']);
     // Récupérer toutes les options de réalisation
-    Route::get('all-options-realisation/{id}', [ProduitController::class, 'getAllOptionRealisation']);
+    Route::get('all-options-realisation', [ProduitController::class, 'getAllOptionRealisation']);
     // Supprimer une option de réalisation
     Route::delete('delete-option-realisation/{id}', [ProduitController::class, 'deleteOptionRealisation']);
     // Changer le statut d'une option de réalisation
@@ -286,9 +286,15 @@ Route::group(['prefix' => 'v1/'], function () {
     // Editer une option de réalisation
     Route::get('edit-option-realisation/{id}', [ProduitController::class, 'editOptionRealisation']);
     // Sauvegarder une option de réalisation
+
     Route::post('save-option-realisation', [ProduitController::class, 'saveOptionRealisation']);
-    // Mettre à jour une option de réalisation
     Route::put('update-option-realisation', [ProduitController::class, 'updateOptionRealisation']);
+
+    Route::post('add-category', [ProduitController::class, 'SaveCategory']);
+    Route::put('update-category/{id}', [ProduitController::class, 'updateCategory']);
+
+    // Route::post('update-category', [ProduitController::class, 'updateCategory']);
+
 
     // Couleurs
     Route::get('couleurs/{id}/all', [ProduitController::class, 'getAllCouleurs']);
@@ -366,7 +372,7 @@ Route::group(['prefix' => 'v1/'], function () {
     Route::post('soussouscategories/update', [ProduitController::class, 'updatesoussouscategories']);
     Route::delete('soussouscategories/delete/{id}', [ProduitController::class, 'deletesoussouscategories']);
 
-    // Routes pour gérer les produits    
+    // Routes pour gérer les produits
     Route::post('produit/add', [ProduitController::class, 'addProduits']);
     Route::post('produit/update', [ProduitController::class, 'updateproduits']);
     // Route pour supprimer une image

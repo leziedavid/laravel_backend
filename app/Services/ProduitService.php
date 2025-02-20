@@ -230,16 +230,13 @@ class ProduitService
     {
         $data = DB::table('sous_categories_produits')
         ->join('categories_produits', 'categories_produits.id_categories_produits', '=', 'sous_categories_produits.idcategories_produits')
-        ->where('sous_categories_produits.id_sous_categories_produits', $id)
-            ->get();
-
+        ->where('sous_categories_produits.id_sous_categories_produits', $id)->get();
         return $this->apiResponse(200, "Sous-catégorie modifiée récupérée avec succès", $data, 200);
     }
 
     public function getOptionRealisationByState()
     {
-        $datas = DB::table('option_reaalisation')
-        ->where('option_reaalisation.stateOption_reaalisation', '=', 1)
+        $datas = DB::table('option_reaalisation')->where('option_reaalisation.stateOption_reaalisation', '=', 1)
         ->get();
 
         return $this->apiResponse(200, "Options de réalisation récupérées avec succès", $datas, 200);
@@ -247,18 +244,28 @@ class ProduitService
 
     public function getOpRealisation($id)
     {
-        $datas = DB::table('op_realisation')
-        ->where('idrealis_op_realisation', $id)
-            ->get();
+        $datas = DB::table('op_realisation')->where('idrealis_op_realisation', $id) ->get();
         return $this->apiResponse(200, "Option de réalisation récupérée avec succès", $datas, 200);
     }
 
-    public function getAllOptionRealisation($id)
+    public function getAllOptionRealisation($filters)
     {
-        $datas = DB::table('option_reaalisation')
-        ->orderBy('option_reaalisation.id_option_reaalisation', 'desc')
-        ->paginate(8);
 
+        // Récupérer les paramètres de filtrage
+        $page = $filters['page'] ?? 1; // Défaut à 1 si aucun paramètre de page n'est fourni
+        $limit = $filters['limit'] ?? 10; // Défaut à 6 éléments par page
+        $search = $filters['search'] ?? ''; // Le terme de recherche, vide si aucun
+
+        // Construire la requête de base pour les newsletters
+        $query = DB::table('option_reaalisation')->orderBy('option_reaalisation.id_option_reaalisation', 'DESC')->distinct();
+        // Ajouter un filtre de recherche sur le champ 'objets' ou 'nom_newsletters' si un terme de recherche est fourni
+        if ($search) {
+            $query->where(function ($query) use ($search) {
+                $query->where('libelleOption_reaalisation', 'like', '%' . $search . '%');
+            });
+        }
+        // Appliquer la pagination en utilisant les paramètres de page et de limite
+        $datas = $query->paginate($limit, ['*'], 'page', $page);
         return $this->apiResponse(200, "Toutes les options de réalisation récupérées avec succès", $datas, 200);
     }
 
@@ -274,10 +281,7 @@ class ProduitService
     {
         $donnes = DB::table('option_reaalisation')
         ->where('id_option_reaalisation', '=', $id)
-            ->update([
-                'stateOption_reaalisation' => $staus,
-            ]);
-
+        ->update([ 'stateOption_reaalisation' => $staus,]);
         return $this->apiResponse(200, "Statut de l'option de réalisation mis à jour avec succès",[], 200);
     }
 
@@ -287,29 +291,77 @@ class ProduitService
         return $this->apiResponse(200, "Option de réalisation modifiée récupérée avec succès", $data, 200);
     }
 
-    public function SaveOptionRealisation(Request $request)
+
+    // mise a jour et creation de mes category
+
+    public function SaveCategory(Request $request)
     {
         $today = Carbon::today();
 
-        $data = DB::table('option_reaalisation')->insertGetId([
-            'libelleOption_reaalisation' => $request->libelle,
-            'created_at' => $today,
-        ]);
+        // Récupérer les catégories envoyées dans le body de la requête
+        $categories = $request->categories;
 
-        return $this->apiResponse(200, "Option de réalisation créée avec succès",[], 200);
+        // Insertion de chaque catégorie dans la table option_reaalisation
+        foreach ($categories as $category) {
+            DB::table('option_reaalisation')->insert([ 'libelleOption_reaalisation' => $category,'created_at' => $today,]);
+        }
+        return $this->apiResponse(200, "Catégories ajoutées avec succès", [], 200);
     }
 
-    public function updateOptionRealisation(Request $request)
+    public function updateCategory(Request $request, $id)
     {
         $today = Carbon::today();
-
-        $donnes = DB::table('option_reaalisation')
-        ->where('id_option_reaalisation', '=', $request->id_option_realisation)
-            ->update([
-                'libelleOption_reaalisation' => $request->libelle,
-            ]);
-        return $this->apiResponse(200, "Option de réalisation mise à jour avec succès", [], 200);
+    
+        // Récupérer les catégories envoyées par l'API
+        $categories = $request->input('categories');
+    
+        if (empty($categories) || !is_array($categories)) {
+            return $this->apiResponse(400, "Aucune catégorie valide fournie", [], 400);
+        }
+    
+        // Parcours des catégories et mise à jour dans la base de données
+        foreach ($categories as $categoryName) {
+            // Mise à jour de la catégorie spécifiée par son ID
+            $updated = DB::table('option_reaalisation')
+                ->where('id_option_reaalisation', '=', $id)
+                ->update([
+                    'libelleOption_reaalisation' => $categoryName,
+                    'updated_at' => $today,
+                ]);
+    
+            if (!$updated) {
+                return $this->apiResponse(400, "Échec de la mise à jour pour la catégorie avec l'ID: $id", [], 400);
+            }
+        }
+    
+        return $this->apiResponse(200, "Catégorie(s) mise(s) à jour avec succès", [], 200);
     }
+    
+
+
+    // public function SaveOptionRealisation(Request $request)
+    // {
+    //     $today = Carbon::today();
+
+    //     $data = DB::table('option_reaalisation')->insertGetId([
+    //         'libelleOption_reaalisation' => $request->libelle,
+    //         'created_at' => $today,
+    //     ]);
+
+    //     return $this->apiResponse(200, "Option de réalisation créée avec succès",[], 200);
+    // }
+
+    // public function updateOptionRealisation(Request $request)
+    // {
+    //     $today = Carbon::today();
+
+    //     $donnes = DB::table('option_reaalisation')
+    //     ->where('id_option_reaalisation', '=', $request->id_option_realisation)
+    //         ->update([
+    //             'libelleOption_reaalisation' => $request->libelle,
+    //         ]);
+    //     return $this->apiResponse(200, "Option de réalisation mise à jour avec succès", [], 200);
+    // }
 
     // Paramètre des couleurs
     public function getAllCouleurs($id)

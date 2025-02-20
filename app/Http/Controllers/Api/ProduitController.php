@@ -103,9 +103,15 @@ class ProduitController extends Controller
     }
 
     // Route pour récupérer toutes les options de réalisation
-    public function getAllOptionRealisation($id)
+    public function getAllOptionRealisation(Request $request)
     {
-        return $this->produitService->getAllOptionRealisation($id);
+        // Récupérer les paramètres de la requête (page, limit, search)
+        $filters = [
+            'page' => $request->query('page', 1),   // Par défaut, la page est 1
+            'limit' => $request->query('limit', 10), // Par défaut, la limite est 10
+            'search' => $request->query('search', null), // Si 'search' est fourni, on l'utilise, sinon null
+        ];
+        return $this->produitService->getAllOptionRealisation($filters);
     }
 
     // Route pour supprimer une option de réalisation
@@ -126,18 +132,32 @@ class ProduitController extends Controller
         return $this->produitService->editOptionRealisation($id);
     }
 
+
     // Route pour sauvegarder une option de réalisation
-    public function saveOptionRealisation(Request $request)
+    public function SaveCategory(Request $request)
     {
-        return $this->produitService->SaveOptionRealisation($request);
+        return $this->produitService->SaveCategory($request);
     }
 
     // Route pour mettre à jour une option de réalisation
-    public function updateOptionRealisation(Request $request)
+    public function updateCategory(Request $request, $id)
     {
-        return $this->produitService->updateOptionRealisation($request);
+        // Appeler la méthode du service avec l'ID et les données de la requête
+        return $this->produitService->updateCategory($request, $id);
     }
 
+
+    // // Route pour sauvegarder une option de réalisation
+    // public function saveOptionRealisation(Request $request)
+    // {
+    //     return $this->produitService->SaveOptionRealisation($request);
+    // }
+
+    // // Route pour mettre à jour une option de réalisation
+    // public function updateOptionRealisation(Request $request)
+    // {
+    //     return $this->produitService->updateOptionRealisation($request);
+    // }
 
 
     // Couleurs
