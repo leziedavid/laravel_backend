@@ -36,7 +36,7 @@ class ExportController extends Controller
         if ($export->isEmpty()) {
             return $this->apiResponse(400, "Erreur : aucun résultat trouvé pour les filtres fournis.", [], 400);
         }
-
+        
         // Définir le nom et le chemin du fichier
         $fileName = 'Export_' . time() . '.xlsx';
         $filePath = public_path('Export/' . $fileName);
