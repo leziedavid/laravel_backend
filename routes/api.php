@@ -92,8 +92,10 @@ Route::group(['prefix' => 'v1/'], function () {
 
     Route::post('transactions/import', [TransactionController::class, 'import']);
     Route::get('transactions', [TransactionController::class, 'alltransactions']);
+    Route::get('getCategorieTransaction', [TransactionController::class, 'getCategorieTransaction']);
     Route::get('getTransactionTotal', [TransactionController::class, 'getTransactionTotal']);
     Route::get('export-transactions', [ExportController::class, 'exportTransactions'])->name('export.transactions');
+    Route::get('transactions/graphs', [TransactionController::class, 'getTransactionGraphs']);
 
     Route::post('confirmation-mail', [HomeController::class, 'confirmationMail']);
     Route::post('send-emails-devis', [HomeController::class, 'sendEmailsDevis']);
@@ -209,7 +211,14 @@ Route::group(['prefix' => 'v1/'], function () {
     // Route pour supprimer une réalisation
     Route::delete('realisations/{id}', [HomeController::class, 'removeRealisation']);
     // Route pour obtenir toutes les images de la galerie
+    Route::get('categories-gallery', [HomeController::class, 'getCategoriesGallery']);
     Route::get('gallerie-images', [HomeController::class, 'getAllGallerieImages']);
+
+    Route::post('addCategory', [HomeController::class, 'addCategory']);
+    Route::put('updateCategory/{id}', [HomeController::class, 'updateCategory']);
+    Route::delete('deleteCategory/{id}', [HomeController::class, 'deleteCategory']);
+    Route::post('associateImages', [HomeController::class, 'associateImages']);
+
     // Route pour sauvegarder les images de la galerie
     Route::post('savegallerie-images', [HomeController::class, 'saveGallerieImages']);
     // Route pour enregistrer les réalisations

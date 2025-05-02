@@ -1415,31 +1415,102 @@ class HomeService
 
     public function AddMultifiles(Request $request)
     {
-        $uploadedFiles = $request->logo;
+        $uploadedFile = $request->logo;
+    
+        // Déterminer le répertoire en fonction de la position
         $dir = ($request->positionfiles == 4 || $request->positionfiles == 5) ? 'PubCard/' : 'Logos/';
-
+    
+        // Générer un nom de fichier aléatoire
         $str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
         $str1 = '0123456789';
-        $shuffled = str_shuffle($str);
-        $shuffled1 = str_shuffle($str1);
-        $code = "images-" . substr($shuffled1, 0, 5) . "" . substr($shuffled, 0, 1);
+        $code = 'images-' . substr(str_shuffle($str1), 0, 5) . substr(str_shuffle($str), 0, 1);
+    
         $absolutePath = public_path($dir);
-        $extension = $uploadedFiles->getClientOriginalExtension();
+        $extension = $uploadedFile->getClientOriginalExtension();
         $filename = $code . '.' . $extension;
-        $uploadedFiles->move($absolutePath, $filename);
+    
+        // Sauvegarder le fichier
+        $uploadedFile->move($absolutePath, $filename);
         $relativePath = $dir . $filename;
-
+    
+        // Logique d'enregistrement dynamique
         $data = false;
-        switch ($request->positionfiles) {
+        $id = $request->id;
+        $step = $request->positionfiles;
+    
+        switch ($step) {
             case 1:
-                DB::table('reglages')->where('id_reglages', '=', $request->id_reglages)->update(['logoSite_reglages' => $relativePath]);
+                // Logo du site
+                DB::table('reglages')->where('id_reglages', $id)->update([ 'logoSite_reglages' => $relativePath ]);
+                $data = true;
+                break;
+    
+            case 2:
+                // Première image de publicité
+                DB::table('publicite')->where('id_publicite', $id)->update([
+                    'files_publicite1' => $relativePath,
+                    'libelle_publicite1' => $request->libelle_publicite1,
+                    'link1' => $request->link1,
+                ]);
+                $data = true;
+                break;
+    
+            case 3:
+                // Deuxième image de publicité
+                DB::table('publicite')->where('id_publicite', $id)->update([
+                    'files_publicite2' => $relativePath,
+                    'libelle_publicite2' => $request->libelle_publicite2,
+                    'link2' => $request->link2
+                ]);
+                $data = true;
+                break;
+    
+            case 4:
+                // Carte pub recto
+                DB::table('reglages')->where('id_reglages', $id)->update([
+                    'logoSite_reglages' => $relativePath
+                ]);
+                $data = true;
+                break;
+    
+            case 5:
+                // Carte pub verso
+                DB::table('reglages')->where('id_reglages', $id)->update([
+                    'logo_footer' => $relativePath
+                ]);
                 $data = true;
                 break;
                 // Ajouter les autres cas ici de manière similaire
-        }
+            case 6:
+                // Carte pub recto
+                DB::table('reglages')->where('id_reglages', $id)->update([
+                    'images1_reglages' => $relativePath
+                ]);
+                $data = true;
+                break;
 
+            case 7:
+                // Carte pub verso
+                DB::table('reglages')->where('id_reglages', $id)->update([
+                    'images2_reglages' => $relativePath
+                ]);
+                $data = true;
+                break;
+            case 8: 
+                // Carte pub recto
+                DB::table('reglages')->where('id_reglages', $id)->update([
+                    'images3_reglages' => $relativePath
+                ]);
+                $data = true;
+                break;
+    
+            default:
+                return $this->apiResponse(400, "Position inconnue", null, 400);
+        }
+    
         return $this->apiResponse(200, "Fichier téléchargé et mis à jour avec succès", $data, 200);
     }
+    
 
 
     public function profilUpdate(Request $request)
@@ -1699,14 +1770,28 @@ class HomeService
     public function getAllgallerieImages($filters)
     {
            // Récupérer les paramètres de filtrage
-           $page = $filters['page'];
-           $limit = $filters['limit'];
-           $search = $filters['search'];
+            $page = $filters['page'];
+            $limit = $filters['limit'];
+            $search = isset($filters['search']) ? $filters['search'] : 0;
 
-        $images = DB::table('gallerie_images')
-            ->distinct()
-            ->orderBy('gallerie_images.id_gallerie_images', 'desc')
-            ->paginate(50);
+            if ($search==0) {
+
+                $images = DB::table('gallerie_images')
+                    // ->where('gallerie_images.libelle_gallerie_images', 'like', '%' . $search . '%')
+                    ->orderBy('gallerie_images.id_gallerie_images', 'desc')
+                    ->distinct()
+                    ->paginate(50);
+
+            } else {
+
+                $images = DB::table('gallerie_images')
+                ->distinct()
+                ->join('gallery_category_image', 'gallery_category_image.id_image', '=', 'gallerie_images.id_gallerie_images')
+                ->where('gallery_category_image.id_category', $search)
+                ->orderBy('gallerie_images.id_gallerie_images', 'desc')
+                ->paginate(50);
+            
+            }
 
         $reglages = DB::table('reglages')
             ->distinct()->orderBy('reglages.id_reglages', 'desc')
@@ -1733,7 +1818,14 @@ class HomeService
             $today = date("Y-m-d");
             $relativePaths = [];
             $files = $request->file('files');
-    
+
+            // 🔄 On décode le JSON reçu en string (ex: "[4,6,5]")
+            $categoryIds = json_decode($request->input('categoryIds'), true);
+
+            if (!is_array($categoryIds) || empty($categoryIds)) {
+                return $this->apiResponse(400, "Aucune catégorie valide n'a été sélectionnée.", [], 400);
+            }
+
             // Si un seul fichier est envoyé, le convertir en tableau
             if (!is_array($files)) {
                 $files = [$files];
@@ -1756,18 +1848,29 @@ class HomeService
                 $filename = $code . '.' . $extension;
                 $fichiers->move($absolutePath, $filename);
                 $relativePaths = $dir . $filename;
-    
-                // Déplacer le fichier
-                $labele="Images";
 
-                // $relativePaths[] = $dir . $filename;
-
-                // Enregistrer dans la base de données
-                DB::table('gallerie_images')->insert([
-                    'libelle_gallerie_images' => $labele,
-                    'files_gallerie_images' => $dir.$filename,
+                // 💾 Insérer l'image
+                $imageId = DB::table('gallerie_images')->insertGetId([
+                    'libelle_gallerie_images' => "Images",
+                    'files_gallerie_images' => $dir . $filename,
                     'created_at' => $today,
+                    'updated_at' => now(),
                 ]);
+
+                // apres creation on recuperer l'id de l'image pour l'associer a la catégorie
+                // 🔗 Création des associations
+                $associations = [];
+                foreach ($categoryIds as $categoryId) {
+                    $associations[] = [
+                        'id_image' => $imageId,
+                        'id_category' => $categoryId,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
+
+                DB::table('gallery_category_image')->insert($associations);
+
             }
     
             return $this->apiResponse(200, "Images ajoutés avec succès", [], 200);
@@ -2107,4 +2210,89 @@ class HomeService
 
         return $this->apiResponse(200, "Commentaires du produit récupérés avec succès", $comments, 200);
     }
+
+
+        // Fonction pour récupérer les catégories de la galerie
+        public function getCategoriesGallery()
+        {
+            $categoriesGallery = DB::table('categories_gallery')
+                ->select('idcategories_gallery', 'libelle')
+                ->orderBy('libelle', 'asc')
+                ->get();
+            return $this->apiResponse(200, "Liste des catégories galleryrécupérées avec succès", $categoriesGallery, 200);
+        }
+
+    public function addCategory(Request $request)
+    {
+        $id = DB::table('categories_gallery')->insertGetId([
+            'libelle' => $request->libelle,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        return $this->apiResponse(201, "Catégorie ajoutée avec succès", ['id' => $id], 201);
+    }
+
+    public function updateCategory(Request $request, $id)
+    {
+
+        $updated = DB::table('categories_gallery')
+            ->where('idcategories_gallery', $id)
+            ->update([
+                'libelle' => $request->libelle,
+                'updated_at' => now(),
+            ]);
+
+        if ($updated) {
+            return $this->apiResponse(200, "Catégorie mise à jour avec succès", null, 200);
+        }
+
+        return $this->apiResponse(404, "Catégorie non trouvée", null, 404);
+    }
+
+    public function deleteCategory($id)
+    {
+        $deleted = DB::table('categories_gallery')->where('idcategories_gallery', $id)->delete();
+        if ($deleted) {
+            return $this->apiResponse(200, "Catégorie supprimée avec succès", null, 200);
+        }
+        return $this->apiResponse(404, "Catégorie non trouvée", null, 404);
+    }
+
+
+    public function associateImages(Request $request)
+    {
+        $data = $request->input('assignments'); // ← Accès à "assignments"
+    
+        if (empty($data) || !is_array($data)) {
+            return $this->apiResponse(400, "Le format de la requête est invalide ou vide.", null, 400);
+        }
+    
+        $associations = [];
+    
+        foreach ($data as $association) {
+            if ( !isset($association['id_image']) || !isset($association['categories']) || !is_array($association['categories'])
+            ) {
+                return $this->apiResponse(400, "Chaque élément doit contenir un id_image et un tableau categories.", null, 400);
+            }
+    
+            foreach ($association['categories'] as $categoryId) {
+                $associations[] = [
+                    'id_image' => $association['id_image'],
+                    'id_category' => $categoryId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+        }
+    
+        DB::table('gallery_category_image')->insert($associations);
+        return $this->apiResponse(201, "Associations enregistrées avec succès", null, 201);
+    }
+    
+
+
+
+
+    
+
 }

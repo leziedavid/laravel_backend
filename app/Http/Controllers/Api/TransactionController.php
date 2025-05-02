@@ -45,6 +45,11 @@ class TransactionController extends Controller
         }
     }
 
+    public function getCategorieTransaction(Request $request)
+    {
+        // Passer les filtres au service pour récupérer les données
+        return $this->transactionService->getCategorieTransaction();
+    }
 
     public function alltransactions(Request $request)
     {
@@ -56,6 +61,8 @@ class TransactionController extends Controller
             'category' => $request->query('category', null),
             'payment' => $request->query('payment', null),
             'selectedYears' => $request->query('selectedYears', null),
+            'selectedCategorie' => $request->query('selectedCategorie', null), // Date de début pour le filtre
+
         ];
         // Passer les filtres au service pour récupérer les données
         return $this->transactionService->getAlltransactions($filters);
@@ -71,9 +78,26 @@ class TransactionController extends Controller
             'category' => $request->query('category', null),
             'payment' => $request->query('payment', null),
             'selectedYears' => $request->query('selectedYears', null),
+            'selectedCategorie' => $request->query('selectedCategorie', null), // Date de début pour le filtre
         ];
         // Passer les filtres au service pour récupérer les données
         return $this->transactionService->getTransactionTotals($filters);
     }
+
+
+    public function getTransactionGraphs(Request $request, TransactionService $service)
+        {
+                  // Récupérer les paramètres de la requête (page, limit, search)
+        $filters = [
+                'page' => $request->query('page', 1),   // Par défaut, la page est 1
+                'limit' => $request->query('limit', 10), // Par défaut, la limite est 10
+                'search' => $request->query('search', null), // Si 'search' est fourni, on l'utilise, sinon null
+                'category' => $request->query('category', null),
+                'payment' => $request->query('payment', null),
+                'selectedYears' => $request->query('selectedYears', null),
+                'selectedCategorie' => $request->query('selectedCategorie', null), // Date de début pour le filtre
+            ];
+            return $this->transactionService->getTransactionGraphs($filters);
+        }
 
 }

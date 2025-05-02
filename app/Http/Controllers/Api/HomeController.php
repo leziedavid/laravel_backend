@@ -554,9 +554,34 @@ class HomeController extends Controller
         return $this->homeService->getAllproduitscommentsById($id);
     }
 
+    public function getCategoriesGallery(HomeService $service)
+    {
+        return $this->homeService->getCategoriesGallery();
+    }
 
+    // Ajouter une nouvelle catégorie
+    public function addCategory(Request $request)
+    {
+        return $this->homeService->addCategory($request);
+    }
 
+    // Mettre à jour une catégorie existante
+    public function updateCategory(Request $request, $id)
+    {
+        return $this->homeService->updateCategory($request, $id);
+    }
 
+    // Supprimer une catégorie
+    public function deleteCategory($id)
+    {
+        return $this->homeService->deleteCategory($id);
+    }
+
+    // Associer des images à des catégories
+    public function associateImages(Request $request)
+    {
+        return $this->homeService->associateImages($request);
+    }
 
 
 
