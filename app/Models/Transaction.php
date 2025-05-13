@@ -12,6 +12,7 @@ class Transaction extends Model
     protected $fillable = [
         'date',
         'libelle',
+        'categorieTransactionsId',
         'sortie_caisse',
         'sortie_banque',
         'entree_caisse',

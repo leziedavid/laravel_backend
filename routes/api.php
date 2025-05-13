@@ -91,6 +91,7 @@ Route::group(['prefix' => 'v1/'], function () {
 // import de la compta 
 
     Route::post('transactions/import', [TransactionController::class, 'import']);
+    Route::post('save-transactions', [TransactionController::class, 'saveTransactions']);
     Route::get('transactions', [TransactionController::class, 'alltransactions']);
     Route::get('getCategorieTransaction', [TransactionController::class, 'getCategorieTransaction']);
     Route::get('getTransactionTotal', [TransactionController::class, 'getTransactionTotal']);

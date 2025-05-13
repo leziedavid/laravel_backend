@@ -495,8 +495,7 @@ class TransactionService
 
     // 🥧 5. PieGraphByTypeOperation
     $pieByType = (clone $baseQuery)
-        ->select(
-            'type_operation',
+        ->select('type_operation',
             DB::raw("MIN(date) as date"),
             DB::raw("
                 SUM(
@@ -829,6 +828,58 @@ public function getTransactionGraphs2($filters)
 
         return $categorie ? $categorie->id : null;
     }
+
+
+    public function saveTransactions(Request $request)
+    {
+        try {
+            // On récupère les données du formulaire
+            $data = $request->all();
+
+            // Initialisation des colonnes
+            $entreeCaisse = 0;
+            $entreeBanque = 0;
+            $sortieCaisse = 0;
+            $sortieBanque = 0;
+
+            // On détermine quelle colonne remplir
+            switch ($data['typeTransaction']) {
+                case 'entree_caisse':
+                    $entreeCaisse = (float) $data['somme'];
+                    break;
+                case 'entree_banque':
+                    $entreeBanque = (float) $data['somme'];
+                    break;
+                case 'sortie_caisse':
+                    $sortieCaisse = (float) $data['somme'];
+                    break;
+                case 'sortie_banque':
+                    $sortieBanque = (float) $data['somme'];
+                    break;
+                default:
+                    return $this->apiResponse(400, "Type de transaction invalide", [], 400);
+            }
+
+            // Création de la transaction
+            $transaction = Transaction::create([
+                'date' => $data['date'],
+                'libelle' => $data['libelle'],
+                'categorieTransactionsId' => (int) $data['categorieTransactionsId'],
+                // 'categorieTransactionsId' => $data['categorieTransactionsId'],
+                'sortie_caisse' => $sortieCaisse,
+                'sortie_banque' => $sortieBanque,
+                'entree_caisse' => $entreeCaisse,
+                'entree_banque' => $entreeBanque,
+                'type_operation' => $data['type_operation'] ?? null,
+                'details' => $data['details'] ?? null,
+            ]);
+
+            return $this->apiResponse(201, "Transaction enregistrée avec succès.", $transaction, 201);
+        } catch (\Exception $e) {
+            return $this->apiResponse(500, "Erreur serveur", ['message' => $e->getMessage()], 500);
+        }
+    }
+
 
 
 }

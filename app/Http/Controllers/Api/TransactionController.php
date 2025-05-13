@@ -100,4 +100,14 @@ class TransactionController extends Controller
             return $this->transactionService->getTransactionGraphs($filters);
         }
 
+
+    public function saveTransactions(Request $request)
+    {
+        try {
+            return $this->transactionService->saveTransactions($request);
+        } catch (\Exception $e) {
+            return $this->apiResponse(500, "Erreur lors de la création de la transaction.", $e->getMessage(), 500);
+        }
+    }
+
 }
